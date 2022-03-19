@@ -23,6 +23,8 @@ This TNC has same functionality as WB8WGA's PIC TNC.
 ```
 git clone https://github.com/amedes/pico_tnc.git
 cd pico_tnc
+git submodule init
+git submodule update
 mkdir build
 cd build
 cmake ..
