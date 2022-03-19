@@ -106,6 +106,19 @@ void tty_write_str(tty_t *ttyp, uint8_t const *str)
     tty_write(ttyp, str, len);
 }
 
+void tty_write_nibble(tty_t *ttyp, uint8_t n)
+{
+	if (n < 10)
+		tty_write_char(ttyp, '0'+n);
+	else
+		tty_write_char(ttyp, 'a'+n-10);
+}
+
+void tty_write_byte(tty_t *ttyp, uint8_t b)
+{
+	tty_write_nibble(ttyp, b >> 4);
+	tty_write_nibble(ttyp, b & 0xf);
+}
 #define BS '\b'
 #define CR '\r'
 #define DEL '\x7f'

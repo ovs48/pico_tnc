@@ -36,3 +36,5 @@ void tty_input(tty_t *ttyp, int ch);
 void tty_write(tty_t *ttyp, uint8_t const *data, int len);
 void tty_write_char(tty_t *ttyp, uint8_t ch);
 void tty_write_str(tty_t *ttyp, uint8_t const *str);
+void tty_write_nibble(tty_t *ttyp, uint8_t n);
+void tty_write_byte(tty_t *ttyp, uint8_t b);
