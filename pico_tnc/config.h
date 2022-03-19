@@ -12,8 +12,8 @@
 #define GPIO_UART1_RX 9
 #define GPIO_LED 10
 #define GPIO_ENCODER_SW 11
-#define GPIO_I2C0_SDA 12
-#define GPIO_I2C0_SCL 13
+#define GPIO_OLED_SDA 12
+#define GPIO_OLED_SCL 13
 #define GPIO_ENCODER_DT 14
 #define GPIO_ENCODER_CLK 15
 #define GPIO_ROW4 16
@@ -33,6 +33,8 @@
 
 #define GPIO_PWM2 GPIO_PWM1
 #define GPIO_PTT2 GPIO_PTT1
+
+#define I2C_OLED i2c0 
 
 #define ENABLE_KEYPAD 1
 #define ENABLE_OLED 1

@@ -24,6 +24,7 @@ add_executable(pico_tnc
 	oled.c
 	encoder.c
 	transceiver.c
+	pico-ssd1306/ssd1306.c
         )
 
 pico_generate_pio_header(pico_tnc ${CMAKE_CURRENT_LIST_DIR}/pio_dac.pio)
@@ -40,6 +41,7 @@ target_link_libraries(pico_tnc
 		hardware_dma
         hardware_pwm
         hardware_uart
+	hardware_i2c
 		# For the dummy output:
 		hardware_pio
 		#pico_multicore
