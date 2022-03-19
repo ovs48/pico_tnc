@@ -70,6 +70,18 @@ static char const help_str[] =
     "TRace (tr xmit or tr rcv) - For debugging only\r\n"
     "TXDELAY (txdelay n 0<n<201 n is number of delay flags to send)\r\n"
     "CALIBRATE (Calibrate Mode - Testing Only)\r\n"
+#ifdef ENABLE_KEYPAD
+    "KEYPAD (Keypad test)\r\n"
+#endif
+#ifdef ENABLE_OLED
+    "OLED (Oled test)\r\n"
+#endif
+#ifdef ENABLE_ENCODER
+    "ENCODER (Encoder test)\r\n"
+#endif
+#ifdef ENABLE_TRANSCEIVER
+    "TRANSCEIVER (Transceiver test)\r\n"
+#endif
     "\r\n";
 
 
@@ -688,6 +700,18 @@ static const cmd_t cmd_list[] = {
     { "CONVERSE", 8, cmd_converse, },
     { "K", 1, cmd_converse, },
     { "KISS", 4, cmd_kiss, },
+#ifdef ENABLE_KEYPAD
+    { "KEYPAD", 4, cmd_keypad, },
+#endif
+#ifdef ENABLE_OLED
+    { "OLED", 4, cmd_oled, },
+#endif
+#ifdef ENABLE_ENCODER
+    { "ENCODER", 4, cmd_encoder, },
+#endif
+#ifdef ENABLE_TRANSCEIVER
+    { "TRANSCEIVER", 4, cmd_transceiver, },
+#endif
 
     // end mark
     { NULL, 0, NULL, },

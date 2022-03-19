@@ -37,6 +37,8 @@
 #define ENABLE_KEYPAD 1
 #define ENABLE_OLED 1
 #define ENABLE_ENCODER 1
+#define ENABLE_TRANSCEIVER 1
+
 #else
 #define GPIO_UART0_TX 0
 #define GPIO_UART0_RX 1

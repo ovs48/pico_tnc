@@ -53,18 +53,6 @@
 
 #include "config.h"
 
-#ifdef ENABLE_KEYPAD
-extern void keypad_init(void);
-#endif
-
-#ifdef ENABLE_OLED
-extern void oled_init(void);
-#endif
-
-#ifdef ENABLE_ENCODER
-extern void encoder_init(void);
-#endif
-
 enum STATE {
 	FLAG,
 	DATA
@@ -271,3 +259,24 @@ enum SEND_STATE {
     SP_CALIBRATE,
     SP_CALIBRATE_OFF,
 };
+
+#ifdef ENABLE_KEYPAD
+extern void keypad_init(void);
+bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
+#endif
+
+#ifdef ENABLE_OLED
+extern void oled_init(void);
+bool cmd_oled(tty_t *ttyp, uint8_t *buf, int len);
+#endif
+
+#ifdef ENABLE_ENCODER
+extern void encoder_init(void);
+bool cmd_encoder(tty_t *ttyp, uint8_t *buf, int len);
+#endif
+
+#ifdef ENABLE_TRANSCEIVER
+extern void transceiver_init(void);
+bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
+#endif
+

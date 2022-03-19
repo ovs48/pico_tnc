@@ -18,8 +18,28 @@ keypad_init(void)
 		gpio_put(gpio, 1);
 	}
 	for (i = 0 ; i < sizeof(cols)/sizeof(cols[0]); i++) {
-		gpio_init(cols[i]);
+		char gpio=cols[i];
+		gpio_init(gpio);
+		gpio_pull_down(gpio);
+
 	}
+}
+
+static int
+get_cols(void)
+{
+	int i,ret=0;
+	for (i = 0 ; i < sizeof(cols)/sizeof(cols[0]); i++) {
+		if (gpio_get(cols[i]))
+			ret|=(1<<i);
+	}
+	return ret;
+}
+
+bool
+cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
+{
+	return true;
 }
 
 #endif
