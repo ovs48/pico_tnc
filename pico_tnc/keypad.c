@@ -1,5 +1,6 @@
 #include "pico/stdlib.h"
 #include "tnc.h"
+#include "tty.h"
 
 #ifdef ENABLE_KEYPAD
 
@@ -39,6 +40,7 @@ get_cols(void)
 bool
 cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
 {
+	tty_write_str(ttyp, "Does not yet work\r\n");
 	return true;
 }
 

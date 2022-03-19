@@ -707,7 +707,7 @@ static const cmd_t cmd_list[] = {
     { "OLED", 4, cmd_oled, },
 #endif
 #ifdef ENABLE_ENCODER
-    { "ENCODER", 7, encoder, },
+    { "ENCODER", 7, cmd_encoder, },
 #endif
 #ifdef ENABLE_TRANSCEIVER
     { "TRANSCEIVER", 11, cmd_transceiver, },
