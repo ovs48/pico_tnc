@@ -262,6 +262,7 @@ enum SEND_STATE {
 
 #ifdef ENABLE_KEYPAD
 extern void keypad_init(void);
+void keypad_poll(void);
 bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 

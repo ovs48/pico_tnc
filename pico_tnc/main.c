@@ -167,6 +167,10 @@ int main()
 #ifdef BUSY_PIN
 //        gpio_put(BUSY_PIN, 0);
 #endif
+
+#ifdef ENABLE_KEYPAD
+	keypad_poll();
+#endif
         // wait small time
         __wfi();
 
