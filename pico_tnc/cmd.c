@@ -701,16 +701,16 @@ static const cmd_t cmd_list[] = {
     { "K", 1, cmd_converse, },
     { "KISS", 4, cmd_kiss, },
 #ifdef ENABLE_KEYPAD
-    { "KEYPAD", 4, cmd_keypad, },
+    { "KEYPAD", 6, cmd_keypad, },
 #endif
 #ifdef ENABLE_OLED
     { "OLED", 4, cmd_oled, },
 #endif
 #ifdef ENABLE_ENCODER
-    { "ENCODER", 4, cmd_encoder, },
+    { "ENCODER", 7, encoder, },
 #endif
 #ifdef ENABLE_TRANSCEIVER
-    { "TRANSCEIVER", 4, cmd_transceiver, },
+    { "TRANSCEIVER", 11, cmd_transceiver, },
 #endif
 
     // end mark
