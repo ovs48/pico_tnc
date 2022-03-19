@@ -51,6 +51,7 @@
 #define TTY_N 3                             // number of serial
 #define CMD_BUF_LEN 255
 
+#include "config.h"
 
 enum STATE {
 	FLAG,
