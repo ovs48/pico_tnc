@@ -101,6 +101,19 @@ int main()
     gpio_put(SMPS_PIN, 0);
 #endif
 
+#ifdef ENABLE_KEYPAD
+    keypad_init();
+#endif
+
+#ifdef ENABLE_OLED
+    oled_init();
+#endif
+
+#ifdef ENABLE_ENCODER
+    encoder_init();
+#endif
+
+
     // output greeting text
     tty_write_str(&tty[0], greeting);
     tty_write_str(&tty[1], greeting);

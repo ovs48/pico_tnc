@@ -20,6 +20,9 @@ add_executable(pico_tnc
         digipeat.c
         beacon.c
         kiss.c
+	keypad.c
+	oled.c
+	encoder.c
         )
 
 pico_generate_pio_header(pico_tnc ${CMAKE_CURRENT_LIST_DIR}/pio_dac.pio)

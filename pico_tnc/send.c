@@ -30,15 +30,15 @@
 #include "wave_table.h"
 
 static const int pwm_pins[] = {
-    10, // port 0
-    8,  // port 1
-    6,  // port 2
+    GPIO_PWM0, // port 0
+    GPIO_PWM1,  // port 1
+    GPIO_PWM2,  // port 2
 };
 
 static const int ptt_pins[] = {
-    11, // port 0
-    9,  // port 1
-    7,  // port 2
+    GPIO_PTT0, // port 0
+    GPIO_PTT1,  // port 1
+    GPIO_PTT2,  // port 2
 };
 
 #define LED_PIN PICO_DEFAULT_LED_PIN

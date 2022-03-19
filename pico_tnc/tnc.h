@@ -53,6 +53,18 @@
 
 #include "config.h"
 
+#ifdef ENABLE_KEYPAD
+extern void keypad_init(void);
+#endif
+
+#ifdef ENABLE_OLED
+extern void oled_init(void);
+#endif
+
+#ifdef ENABLE_ENCODER
+extern void encoder_init(void);
+#endif
+
 enum STATE {
 	FLAG,
 	DATA

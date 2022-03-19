@@ -54,8 +54,8 @@ void serial_init(void)
 
     uart_set_fifo_enabled(uart0, true);
 
-    gpio_set_function(0, GPIO_FUNC_UART);
-    gpio_set_function(1, GPIO_FUNC_UART);
+    gpio_set_function(GPIO_UART0_TX, GPIO_FUNC_UART);
+    gpio_set_function(GPIO_UART0_RX, GPIO_FUNC_UART);
 
 #ifdef GPS_ENABLE
     // GPS
@@ -64,8 +64,8 @@ void serial_init(void)
     //printf("UART1 baud rate = %u\n", baud);
 
     uart_set_fifo_enabled(uart0, true);
-    gpio_set_function(4, GPIO_FUNC_UART);
-    gpio_set_function(5, GPIO_FUNC_UART);
+    gpio_set_function(GPIO_UART1_TX, GPIO_FUNC_UART);
+    gpio_set_function(GPIO_UART1_RX, GPIO_FUNC_UART);
 #endif
 }
 
