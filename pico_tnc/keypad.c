@@ -40,7 +40,25 @@ get_cols(void)
 bool
 cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
 {
-	tty_write_str(ttyp, "Does not yet work\r\n");
+	int i;
+	tty_write_str(ttyp, "All active cols: ");
+	tty_write_byte(ttyp, get_cols());
+	tty_write_str(ttyp, "\r\n");
+	for (i = 0 ; i < sizeof(rows)/sizeof(rows[0]); i++) {
+		gpio_put(rows[i], 0);
+	}
+	for (i = 0 ; i < sizeof(rows)/sizeof(rows[0]); i++) {
+		gpio_put(rows[i], 1);
+		tty_write_str(ttyp, "Active col in row ");
+		tty_write_byte(ttyp, i);
+		tty_write_str(ttyp,":");
+		tty_write_byte(ttyp, get_cols());
+		tty_write_str(ttyp, "\r\n");
+		gpio_put(rows[i], 0);
+	}
+	for (i = 0 ; i < sizeof(rows)/sizeof(rows[0]); i++) {
+		gpio_put(rows[i], 1);
+	}
 	return true;
 }
 
