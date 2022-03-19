@@ -56,6 +56,8 @@ cd build
 cmake ..
 
 #WINDOWS USERS USE (See the guide above for more)
+#For Example, if you used the given guide you can use
+#cmake -G "MinGW Makefiles" ..
 cmake -G "<Path To MinGW Files>" ..
 
 make -j4
