@@ -266,9 +266,9 @@ void keypad_poll(void);
 bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
-#ifdef ENABLE_OLED
-extern void oled_init(void);
-bool cmd_oled(tty_t *ttyp, uint8_t *buf, int len);
+#ifdef ENABLE_DISPLAY
+extern void display_init(void);
+bool cmd_display(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
 #ifdef ENABLE_ENCODER

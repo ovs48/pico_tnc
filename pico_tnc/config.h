@@ -37,9 +37,10 @@
 #define I2C_OLED i2c0 
 
 #define ENABLE_KEYPAD 1
-#define ENABLE_OLED 1
+#define ENABLE_DISPLAY 1
 #define ENABLE_ENCODER 1
 #define ENABLE_TRANSCEIVER 1
+#define ENABLE_GUI 1
 
 #else
 #define GPIO_UART0_TX 0

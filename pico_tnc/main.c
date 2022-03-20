@@ -105,8 +105,8 @@ int main()
     keypad_init();
 #endif
 
-#ifdef ENABLE_OLED
-    oled_init();
+#ifdef ENABLE_DISPLAY
+    display_init();
 #endif
 
 #ifdef ENABLE_ENCODER

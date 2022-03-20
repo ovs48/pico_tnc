@@ -73,8 +73,8 @@ static char const help_str[] =
 #ifdef ENABLE_KEYPAD
     "KEYPAD (Keypad test)\r\n"
 #endif
-#ifdef ENABLE_OLED
-    "OLED (Oled test)\r\n"
+#ifdef ENABLE_DISPLAY
+    "DISPLAY (Display test)\r\n"
 #endif
 #ifdef ENABLE_ENCODER
     "ENCODER (Encoder test)\r\n"
@@ -703,8 +703,8 @@ static const cmd_t cmd_list[] = {
 #ifdef ENABLE_KEYPAD
     { "KEYPAD", 6, cmd_keypad, },
 #endif
-#ifdef ENABLE_OLED
-    { "OLED", 4, cmd_oled, },
+#ifdef ENABLE_DISPLAY
+    { "DISPLAY", 7, cmd_display, },
 #endif
 #ifdef ENABLE_ENCODER
     { "ENCODER", 7, cmd_encoder, },

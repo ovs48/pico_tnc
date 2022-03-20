@@ -4,10 +4,10 @@
 #include "tty.h"
 #include "pico-ssd1306/ssd1306.h"
 
-#ifdef ENABLE_OLED
+#ifdef ENABLE_DISPLAY
 
 void
-oled_init(void)
+display_init(void)
 {
 	i2c_init(I2C_OLED, 400 * 1000); /* 400kHz */
 	gpio_set_function(GPIO_OLED_SDA, GPIO_FUNC_I2C);
@@ -22,7 +22,7 @@ bool reserved_addr(uint8_t addr) {
 
 
 bool
-cmd_oled(tty_t *ttyp, uint8_t *buf, int len)
+cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 {
 #if 0
 	tty_write_str(ttyp,"   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\r\n");
