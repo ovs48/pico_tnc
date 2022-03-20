@@ -156,7 +156,12 @@ keypad_get(void)
 static void
 keypad_process(char c)
 {
+#if 0
 	tty_write_char(&tty[0],c);
+#else
+	display_write(&c, 1);
+	display_update();
+#endif
 }
 
 void

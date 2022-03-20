@@ -217,12 +217,14 @@ extern param_t param;
 enum TTY_MODE {
     TTY_TERMINAL = 0,
     TTY_GPS,
+    TTY_TRANSCEIVER,
 };
 
 enum TTY_SERIAL {
     TTY_USB = 0,
     TTY_UART0,
     TTY_UART1,
+    TTY_DISPLAY,
 };
 
 typedef struct TTY {
@@ -268,6 +270,8 @@ bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
 
 #ifdef ENABLE_DISPLAY
 extern void display_init(void);
+extern void display_write(uint8_t const *data, int len);
+extern void display_update(void);
 bool cmd_display(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
