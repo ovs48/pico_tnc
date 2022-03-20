@@ -37,7 +37,7 @@ static queue_t usb_queue;
 
 void usb_output_init(void)
 {
-    queue_init(&usb_queue, sizeof(uint8_t), QUEUE_SIZE);
+    // queue_init(&usb_queue, sizeof(uint8_t), QUEUE_SIZE);
     assert(usb_queue != NULL);
 }
 

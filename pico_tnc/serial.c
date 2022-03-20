@@ -46,7 +46,7 @@ static queue_t uart_queue;
 void serial_init(void)
 {
     queue_init(&uart_queue, sizeof(uint8_t), UART_QUEUE_LEN);
-    assert(uart_queue != NULL);
+    // assert(uart_queue != NULL);
 
     uint baud = uart_init(uart0, UART_BAUDRATE);
 
