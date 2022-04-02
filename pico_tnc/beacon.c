@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
+#include "usb_output.h"
 
 #include "tnc.h"
 #include "unproto.h"
@@ -44,7 +45,8 @@ void beacon(void)
     if (!param.beacon) return;
 
     if (tnc_time() - beacon_time < param.beacon * 60 * 100) return; // convert minutes to 10 ms
-
+    
+    usb_write("beacon\r\n",8);
     send_unproto(&tnc[BEACON_PORT], param.btext, strlen(param.btext));
     beacon_time = tnc_time();
 }

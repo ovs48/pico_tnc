@@ -30,19 +30,25 @@
 #include "wave_table.h"
 
 static const int pwm_pins[] = {
+#if 0
     GPIO_PWM0, // port 0
+#endif
     GPIO_PWM1,  // port 1
     GPIO_PWM2,  // port 2
 };
 
 static const int ptt_pins[] = {
+#if 0
     GPIO_PTT0, // port 0
+#endif
     GPIO_PTT1,  // port 1
     GPIO_PTT2,  // port 2
 };
 
 static const int ptt_active[] = {
+#if 0
     1, 
+#endif
     0,
     1,
 };
@@ -132,6 +138,9 @@ int send_byte(tnc_t *tp, uint8_t data, bool bit_stuff)
 {
     int idx = 0;
 
+#if 0
+    usb_write_char(data);
+#endif
     // generate modem signal
     if (!queue_is_full(&tp->dac_queue)) {
         //uint8_t data = rand();

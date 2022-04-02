@@ -262,13 +262,14 @@ void demodulator(tnc_t *tp, int adc)
 #define CDT_THR_HIGH (CDT_THR_LOW * 2) // low +6dB
 
     if (!tp->cdt && tp->cdt_lvl > CDT_THR_HIGH) { // CDT on
-
+	usb_write("cdc",3);
         gpio_put(tp->cdt_pin, 1);
         tp->cdt = true;
         //printf("(%u) decode: CDT on, adc: %d, cdt_lvl: %d, avg: %d, port = %d\n", tnc_time(), adc, tp->cdt_lvl, tp->avg, tp->port);
         //printf("(%u) decode: cdt on, port = %d\n", tnc_time(), tp->port);
 
     } else if (tp->cdt && tp->cdt_lvl < CDT_THR_LOW) { // CDT off
+	usb_write("!cdc",4);
 
         gpio_put(tp->cdt_pin, 0);
         tp->cdt = false;

@@ -101,6 +101,7 @@ enum TRACE {
     TR_OFF = 0,
     TR_XMIT,
     TR_RCV,
+    TR_BOTH,
 };
 
 static const uint8_t *gps_str[] = {
@@ -516,6 +517,8 @@ static bool cmd_trace(tty_t *ttyp, uint8_t *buf, int len)
             param.trace = TR_XMIT;
         } else if (!strncasecmp(buf, "RCV", 3)) {
             param.trace = TR_RCV;
+        } else if (!strncasecmp(buf, "BOTH", 4)) {
+            param.trace = TR_BOTH;
         } else {
             return false;
         }
@@ -527,6 +530,8 @@ static bool cmd_trace(tty_t *ttyp, uint8_t *buf, int len)
             tty_write_str(ttyp, "XMIT");
         } else if (param.trace == TR_RCV) {
             tty_write_str(ttyp, "RCV");
+        } else if (param.trace == TR_BOTH) {
+            tty_write_str(ttyp, "BOTH");
         } else {
             tty_write_str(ttyp, "OFF");
         }
@@ -542,7 +547,7 @@ static bool cmd_txdelay(tty_t *ttyp, uint8_t *buf, int len)
         
         int t = atoi(buf);
 
-        if (t <= 0 || t > 200) return false;
+        if (t <= 0 || t > 400) return false;
 
         param.txdelay = t;
 
@@ -704,7 +709,7 @@ static const cmd_t cmd_list[] = {
     { "KEYPAD", 6, cmd_keypad, },
 #endif
 #ifdef ENABLE_DISPLAY
-    { "DISPLAY", 7, cmd_display, },
+    { "TDISPLAY", 7, cmd_display, },
 #endif
 #ifdef ENABLE_ENCODER
     { "ENCODER", 7, cmd_encoder, },

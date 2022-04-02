@@ -3,9 +3,16 @@
 #include "tnc.h"
 #include "serial.h"
 #include "tty.h"
+#include "usb_output.h"
 
 #ifdef ENABLE_TRANSCEIVER
 
+static void
+transceiver_command(const char *cmd)
+{
+	serial_write(cmd,strlen(cmd));
+	usb_write(cmd, strlen(cmd));
+}
 void
 transceiver_init(void)
 {
@@ -22,24 +29,20 @@ transceiver_init(void)
 bool
 cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 {
-	char *cmd=NULL;
+	tty_write_str(ttyp, "Transceiver test ");
+	tty_write(ttyp, buf, len);
+	tty_write_str(ttyp, "\r\n");
 	if (len == 1 && buf[0] == '1') {
-		cmd="AT+DMOCONNECT\r\n";
+		transceiver_command("AT+DMOCONNECT\r\n");
 	}
 	if (len == 1 && buf[0] == '2') {
-		cmd="AT+DMOSETGROUP=0,145.5250,145.5250,0000,0,0000\r\n";
+		transceiver_command("AT+DMOSETGROUP=0,144.8000,144.8000,0000,0,0000\r\n");
 	}
 	if (len == 1 && buf[0] == '3') {
 		gpio_put(GPIO_PTT1, 0);
 	}
 	if (len == 1 && buf[0] == '4') {
 		gpio_put(GPIO_PTT1, 1);
-	}
-	tty_write_str(ttyp, "Transceiver test\r\n");
-	tty_write(ttyp, buf, len);
-	if (cmd) {
-		serial_write(cmd,strlen(cmd));
-		tty_write(ttyp, cmd, strlen(cmd));
 	}
 	return true;
 }

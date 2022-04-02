@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //#include "timer.h"
 
 // Channel 0 is GPIO26
-#define ADC_GPIO 26
+#define ADC_GPIO 27
 
 #define BUF_NUM 16
 #define BUF_LEN ((BAUD_RATE * SAMPLING_N * PORT_N + 50) / 100) // ADC samples in 10 ms
