@@ -127,6 +127,7 @@ typedef struct TNC {
 
     // DAC, PTT pin
     uint8_t ptt_pin;
+    uint8_t ptt_active;
     uint8_t pwm_pin;
     uint8_t pwm_slice;
 

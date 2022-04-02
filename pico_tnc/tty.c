@@ -86,7 +86,9 @@ void tty_write(tty_t *ttyp, uint8_t const *data, int len)
         return;
     }
 
+#if 0
     if (ttyp->tty_serial == TTY_UART0) serial_write(data, len);
+#endif
 }
 
 void tty_write_char(tty_t *ttyp, uint8_t ch)
@@ -95,8 +97,9 @@ void tty_write_char(tty_t *ttyp, uint8_t ch)
         usb_write_char(ch);
         return;
     }
-
+#if 0
     if (ttyp->tty_serial == TTY_UART0) serial_write_char(ch);
+#endif
 }
 
 void tty_write_str(tty_t *ttyp, uint8_t const *str)

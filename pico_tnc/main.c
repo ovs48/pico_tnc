@@ -113,6 +113,10 @@ int main()
     encoder_init();
 #endif
 
+#ifdef ENABLE_TRANSCEIVER
+    transceiver_init();
+#endif
+
 
     // output greeting text
     tty_write_str(&tty[0], greeting);

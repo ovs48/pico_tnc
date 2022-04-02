@@ -41,6 +41,12 @@ static const int ptt_pins[] = {
     GPIO_PTT2,  // port 2
 };
 
+static const int ptt_active[] = {
+    1, 
+    0,
+    1,
+};
+
 #define LED_PIN PICO_DEFAULT_LED_PIN
 
 #define ISR_PIN 15
@@ -71,7 +77,7 @@ static void __isr dma_handler(void)
             }
 #endif
             } else {
-                gpio_put(tp->ptt_pin, 0); // PTT off
+                gpio_put(tp->ptt_pin, !tp->ptt_active); // PTT off
                 //pwm_set_chan_level(tp->pwm_slice, PWM_CHAN_A, 0); // set pwm level 0
                 tp->busy = false;
                 //printf("(%u) dma_handler: queue is empty, port = %d, data_chan = %d, ints = %08x\n", tnc_time(), tp->port, tp->data_chan, int_status);
@@ -86,7 +92,7 @@ static void __isr dma_handler(void)
 static void send_start(tnc_t *tp)
 {
     if (!tp->busy) {
-        gpio_put(tp->ptt_pin, 1); // PTT on
+        gpio_put(tp->ptt_pin, tp->ptt_active); // PTT on
         tp->busy = true;
         //printf("restart dma, ctrl = %08x, port = %d\n", dma_hw->ch[tp->data_chan].ctrl_trig, tp->port);
         dma_channel_set_read_addr(tp->data_chan, NULL, true); // trigger NULL interrupt
@@ -223,9 +229,10 @@ void send_init(void)
 
         // PTT pins
         tp->ptt_pin = ptt_pins[i];
+	tp->ptt_active = ptt_active[i];
         gpio_init(tp->ptt_pin);
         gpio_set_dir(tp->ptt_pin, true); // output
-        gpio_put(tp->ptt_pin, 0);
+        gpio_put(tp->ptt_pin, !tp->ptt_active);
 
 #if 0
         // PWM pins
