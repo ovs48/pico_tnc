@@ -37,6 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UART_BAUDRATE 9600
 #define UART_QUEUE_LEN 1024
 
+#include "usb_output.h"
+
 #define GPS_ENABLE 1
 
 #define GPS_BAUDRATE 9600
@@ -101,7 +103,6 @@ void serial_input(void)
     while (uart_is_readable(uart1)) {
         int ch = uart_getc(uart1);
 #if 0
-#include "usb_output.h"
 	usb_write_char(ch);
 #else
         gps_input(ch);
@@ -113,7 +114,6 @@ void serial_input(void)
 
         int ch = uart_getc(uart0);
 #if 1
-#include "usb_output.h"
 	usb_write_char(ch);
 #else
         tty_input(&tty[TTY_UART0], ch);
