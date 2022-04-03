@@ -9,29 +9,74 @@
 
 extern const uint8_t font_8x5[];
 
-static ssd1306_t disp;
-static char cursor_x, cursor_y;
-static bool wrap = true;
-const uint8_t *font = font_8x5;
+static struct display_context {
+	enum {
+		WRAP_FORWARD=1,
+		WRAP_BACKWARD=2,
+	} wrap;
+	const uint8_t *font;
+	uint32_t scale;
 
-void
-display_home(void)
+	enum {
+		CURSOR_STATE_OFF,
+		CURSOR_STATE_ON,
+		CURSOR_STATE_DRAWN,
+	} cursor_state;
+	uint32_t cursor_x, cursor_y,cw,ch;
+	struct {
+		uint32_t x,y,w,h;
+	} window;
+	ssd1306_t disp;
+} dc;
+
+/* TODO: Move this into a ssd1306 fork and do a pull request */
+
+static void ssd1306_clear_pixel(ssd1306_t *p, uint32_t x, uint32_t y) {
+    if(x>=p->width || y>=p->height) return;
+
+    p->buffer[x+p->width*(y>>3)]&=~(0x1<<(y&0x07)); // y>>3==y/8 && y&0x7==y%8
+}
+
+void ssd1306_clear_square(ssd1306_t *p, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+    for(uint32_t i=0; i<width; ++i)
+        for(uint32_t j=0; j<height; ++j)
+            ssd1306_clear_pixel(p, x+i, y+j);
+}
+
+
+static void
+display_home(struct display_context *dc)
 {
-	cursor_x=0;
-	cursor_y=0;
+	dc->cursor_x=dc->window.x;
+	dc->cursor_y=dc->window.y;
+}
+
+static void
+display_clear(struct display_context *dc)
+{
+	ssd1306_clear(&dc->disp);
+	display_home(dc);
+}
+
+static void
+display_update_do(struct display_context *dc)
+{
+	ssd1306_show(&dc->disp);
 }
 
 void
-display_clear(void)
+display_update()
 {
-	ssd1306_clear(&disp);
-	display_home();
+	display_update_do(&dc);
 }
 
-void
-display_update(void)
+static void
+display_init_font(struct display_context *dc, const uint8_t *font, uint32_t scale)
 {
-	ssd1306_show(&disp);
+	dc->font=font;
+	dc->scale=scale;
+	dc->cw=6*scale;
+	dc->ch=9*scale;
 }
 
 void
@@ -42,9 +87,14 @@ display_init(void)
 	gpio_set_function(GPIO_OLED_SCL, GPIO_FUNC_I2C);
 	gpio_pull_up(GPIO_OLED_SDA);
 	gpio_pull_up(GPIO_OLED_SCL);
-	disp.external_vcc=false;
-	ssd1306_init(&disp, 128, 64, 0x3C, I2C_OLED);
-	ssd1306_clear(&disp);
+	dc.disp.external_vcc=false;
+	dc.wrap=WRAP_FORWARD;
+	dc.cursor_state=CURSOR_STATE_ON;
+	dc.window.w=128;
+	dc.window.h=64;
+	display_init_font(&dc, font_8x5, 1);
+	ssd1306_init(&dc.disp, dc.window.w, dc.window.h, 0x3C, I2C_OLED);
+	ssd1306_clear(&dc.disp);
 	char *str="init\r\n";
 	display_write(str, strlen(str));
 #if 0
@@ -53,38 +103,66 @@ display_init(void)
 #endif
 }
 
-void
-display_write(uint8_t const *data, int len)
+static void
+display_space(struct display_context *dc)
 {
-	uint32_t scale=1;
-	
-	
-	while (len > 0) {
-		uint8_t c=*data++;
+	ssd1306_clear_square(&dc->disp, dc->cursor_x, dc->cursor_y, dc->cw, dc->ch);
+}
+
+static void
+display_cursor_clear(struct display_context *dc)
+{
+	if (dc->cursor_state == CURSOR_STATE_DRAWN) {
+		display_space(dc);
+		dc->cursor_state == CURSOR_STATE_ON;
+	}
+}
+
+static void
+display_write_do(struct display_context *dc, uint8_t const *data, int len)
+{
+	display_cursor_clear(dc);
+	while (len >= (dc->cursor_state == CURSOR_STATE_OFF ? 1:0)) {
+		uint8_t c = len?*data++:0;
 		len--;
-		if (c >= 32) {
+		if (c >= 32 || c == '\0') {
 			bool done=true;
 			do {
-				uint32_t x=cursor_x*6;
-				uint32_t y=cursor_y*9;
-				if (wrap && x+font[0] >= disp.width) {
-					cursor_x=0;
-					cursor_y++;
+				if ((dc->wrap & WRAP_FORWARD) && dc->cursor_x+dc->cw > dc->window.w) {
+					dc->cursor_x=dc->window.x;
+					dc->cursor_y+=dc->ch;
 					done=false;
 				}  else {
-					if (x < disp.width && y < disp.height) {
-						ssd1306_draw_char_with_font(&disp, x, y, scale, font, c);
-						cursor_x++;
+					if (dc->cursor_x < dc->window.w && dc->cursor_y < dc->window.h) {
+						if (c == 32) {
+							display_space(dc);
+						} else if (c != 0) {
+							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, c);
+						}  else {
+							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, '_');
+							dc->cursor_state == CURSOR_STATE_DRAWN;	
+						}
+						if (c != 0)
+							dc->cursor_x+=dc->cw;
 					}
 				}
 			} while(!done);
+		} else if (c == '\b') {
+			if (dc->cursor_x >= dc->window.x+dc->cw)
+				dc->cursor_x-=dc->cw;
 		} else if (c == '\r') {
-			cursor_x=0;
+			dc->cursor_x=dc->window.x;
 		} else if (c == '\n') {
-			display_update();
-			cursor_y++;
+			display_update_do(dc);
+			dc->cursor_y+=dc->ch;
 		}
 	}
+}
+
+void
+display_write(uint8_t const *data, int len)
+{
+	display_write_do(&dc, data, len);
 }
 
 bool reserved_addr(uint8_t addr) {
@@ -116,9 +194,9 @@ cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 	}
 	tty_write_str(ttyp, "Done.\r\n");
 #else
-	ssd1306_clear(&disp);
-	ssd1306_draw_string(&disp, 10, 10, 2, "OVS48");
-	ssd1306_show(&disp);
+	display_clear(&dc);
+	display_write_do(&dc, "OVS48",5);
+	display_update_do(&dc);
 #endif
 	return true;
 }
