@@ -58,7 +58,7 @@ static int gps_idx = 0;
 static void gps_send(uint8_t *buf, int len)
 {
     static uint32_t gps_timer = 0;
-
+#if 0
     if (!strncmp("$GPRMC", buf, 6)) {
 	char *str[32],*b=buf,*s;
 	int idx=0;
@@ -78,6 +78,7 @@ static void gps_send(uint8_t *buf, int len)
 		}
 	}
     }
+#endif
     if (tnc_time() - gps_timer < GPS_INTERVAL) return;
 
     if ((param.gps == GPGGA && !strncmp("$GPGAA", buf, 6))
