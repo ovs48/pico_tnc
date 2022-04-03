@@ -233,8 +233,21 @@ void demodulator(tnc_t *tp, int adc)
     int val;
     int bit;
 
-    //printf("%d,", adc);
-
+#if 1
+    static int count,sum,min=65535,max=0;
+    if (adc > max) max=adc;
+    if (adc < min) min=adc;
+    sum+=adc;
+    count++;
+    if (count == 65536) {
+	    debug_printf("%d,%d-%d,%d\r\n", adc,min,max,sum/count);
+            sum=0;
+	    count=0;
+	    min=65535;
+            max=0;
+    }
+#endif
+    
     //dac_output_voltage(DAC_CHANNEL_1, adc >> 4);
 
 #define AVERAGE_MUL 256 
