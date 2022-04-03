@@ -110,15 +110,13 @@ void serial_input(void)
     }
 #endif
 
+#if 0
     while (uart_is_readable(uart0)) {
 
         int ch = uart_getc(uart0);
-#if 1
-	usb_write_char(ch);
-#else
         tty_input(&tty[TTY_UART0], ch);
-#endif	
     }
+#endif
 #if 0
     switch (ch) {
         case 0x08:

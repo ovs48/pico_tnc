@@ -152,6 +152,7 @@ int main()
 
         // output KISS frame to serial
         //kiss_output();
+	transceiver_input();
 
         // process uart I/O
         serial_input();
