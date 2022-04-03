@@ -15,11 +15,11 @@ static char sym_table[][16]=
 	{'1', '.', ',', '?', '!', '@', '&', '`', '%', '-', ':', '*', '#'},
 	{'2', 'A', 'B', 'C'},
 	{'3', 'D', 'E', 'F'},
-	{'a'},
+	{' '},	//Next
 	{'4', 'G', 'H', 'I'},
 	{'5', 'J', 'K', 'L'},
 	{'6', 'M', 'N', 'O'},
-	{'b'},
+	{' '},	//Backspace
 	{'7', 'P', 'Q', 'R', 'S'},
 	{'8', 'T', 'U', 'V'},
 	{'9', 'W', 'X', 'Y', 'Z'},
@@ -144,32 +144,51 @@ char keypad_getchar(int key)
 	if(curr_key==key)
 	{
 		keypad_process('\b');
-		if(key!=3)
+		keypad_process(' ');
+		if(key==3 || key ==7)
+		{
+			if (key==3)
+			{
+				return(' ');
+			}
+			else
+			{
+				keypad_process('\b');
+				keypad_process(' ');
+				keypad_process('\b');
+				return('\0');
+			}
+		}
+		else 
 		{
 			if(counter>=size[key]-1) counter = 0;
 			else counter++;
 			keypad_process('\b');
 			return(sym_table[key][counter]);
 		}
-		else
-		{
-			keypad_process('\b');
-			keypad_process(' ');
-			return('_');
-		}
 	}
 	else
 	{
-		if(key!=3)
+		if(key==3 || key == 7)
 		{
-			curr_key=key;
-			counter=0;
-			keypad_process('\b');
-			return(sym_table[key][counter]);
+			if(key==3)
+			{
+				return(' ');
+			}
+			else
+			{
+				keypad_process('\b');
+				keypad_process(' ');
+				keypad_process('\b');
+				return('\0');
+			}
 		}
 		else
 		{
-			return('_');
+			curr_key=key;
+			counter=0;
+			//keypad_process(' ');
+			return(sym_table[key][counter]);
 		}
 	}
 }
