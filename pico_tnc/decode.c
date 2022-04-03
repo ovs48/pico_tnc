@@ -158,11 +158,20 @@ static void decode_bit(tnc_t *tp, int bit)
 	        tp->state = DATA;
 	        tp->data_cnt = 0;
 	        tp->data_bit_cnt = 0;
+#if 0
+		debug_printf("\r\n$");
+#endif
 	        //fprintf(stderr, "found AX25_FALG\n");
 	    }
 	    break;
 
         case DATA:
+#if 0
+	    if (tp->flag >= 0x32 && tp->flag < 0x7f)
+	   	 debug_printf("%c",tp->flag);
+	    else
+	   	 debug_printf("#%02x",tp->flag);
+#endif
 	    if ((tp->flag & 0x3f) == 0x3f) { // AX.25 flag, end of packet, six continuous "1" bits
 	        output_packet(tp);
 	        tp->state = FLAG;
@@ -234,14 +243,16 @@ void demodulator(tnc_t *tp, int adc)
     int bit;
 
 #if 1
-    static int count,sum,min=65535,max=0;
+    static int count,sum,suma,min=65535,max=0;
     if (adc > max) max=adc;
     if (adc < min) min=adc;
+    suma+=abs(adc-127);
     sum+=adc;
     count++;
     if (count == 65536) {
-	    debug_printf("%d,%d-%d,%d\r\n", adc,min,max,sum/count);
+	    debug_printf("%d,%d-%d,%d,%d\r\n", adc,min,max,sum/count,suma/count);
             sum=0;
+	    suma=0;
 	    count=0;
 	    min=65535;
             max=0;
@@ -275,14 +286,14 @@ void demodulator(tnc_t *tp, int adc)
 #define CDT_THR_HIGH (CDT_THR_LOW * 2) // low +6dB
 
     if (!tp->cdt && tp->cdt_lvl > CDT_THR_HIGH) { // CDT on
-	usb_write("cdc",3);
+	usb_write("cdt",3);
         gpio_put(tp->cdt_pin, 1);
         tp->cdt = true;
         //printf("(%u) decode: CDT on, adc: %d, cdt_lvl: %d, avg: %d, port = %d\n", tnc_time(), adc, tp->cdt_lvl, tp->avg, tp->port);
         //printf("(%u) decode: cdt on, port = %d\n", tnc_time(), tp->port);
 
     } else if (tp->cdt && tp->cdt_lvl < CDT_THR_LOW) { // CDT off
-	usb_write("!cdc",4);
+	usb_write("!cdt",4);
 
         gpio_put(tp->cdt_pin, 0);
         tp->cdt = false;

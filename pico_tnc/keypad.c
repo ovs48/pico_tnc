@@ -1,3 +1,4 @@
+#include <string.h>
 #include "pico/stdlib.h"
 #include "tnc.h"
 #include "tty.h"
@@ -10,24 +11,24 @@ static int active_row=-1;
 static int active_col=-1;
 static char debounce_counter,current_key,last_key;
 
-static char sym_table[][16]=
+static char *sym_table[]=
 {
-	{'1', '.', ',', '?', '!', '@', '&', '`', '%', '-', ':', '*', '#'},
-	{'2', 'A', 'B', 'C'},
-	{'3', 'D', 'E', 'F'},
-	{' '},	//Next
-	{'4', 'G', 'H', 'I'},
-	{'5', 'J', 'K', 'L'},
-	{'6', 'M', 'N', 'O'},
-	{' '},	//Backspace
-	{'7', 'P', 'Q', 'R', 'S'},
-	{'8', 'T', 'U', 'V'},
-	{'9', 'W', 'X', 'Y', 'Z'},
-	{'c'},
-	{'*'},
-	{'0', ' '},
-	{'#'},	//Modifier
-	{'d'},
+	"1.,?!@&`%-:*#",
+	"2ABC",
+	"3DEF",
+	" ",	//Next
+	"4GHI",
+	"5JKL",
+	"6MNO",
+	"\b",	//Backspace
+	"7PQRS",
+	"8TUV",
+	"9WXYZ",
+	"c",
+	"*",
+	"0 ",
+	"#",	//Modifier
+	"d",
 };
 
 /*static int* key_table[][4]={
@@ -36,11 +37,6 @@ static char sym_table[][16]=
 	{key_7,key_8,key_9, key_C},	
 	{key_star ,key_0, key_hash, key_D},	
 };*/
-
-static int size[16]=
-{
-	13, 4, 4, 1, 4, 4, 4, 1, 5, 4, 5, 1, 1, 2, 1, 1
-};
 
 static void keypad_process(char c);
 
@@ -161,8 +157,10 @@ char keypad_getchar(int key)
 		}
 		else 
 		{
-			if(counter>=size[key]-1) counter = 0;
-			else counter++;
+			if(counter>=strlen(sym_table[key]))
+				counter = 0;
+			else
+				counter++;
 			keypad_process('\b');
 			return(sym_table[key][counter]);
 		}
