@@ -145,14 +145,7 @@ char keypad_getchar(int key)
 	{
 		keypad_process('\b');
 		keypad_process(' ');
-		if(key!=3 && key != 7)
-		{
-			if(counter>=size[key]-1) counter = 0;
-			else counter++;
-			keypad_process('\b');
-			return(sym_table[key][counter]);
-		}
-		else 
+		if(key==3 || key ==7)
 		{
 			if (key==3)
 			{
@@ -166,19 +159,19 @@ char keypad_getchar(int key)
 				return('\0');
 			}
 		}
+		else 
+		{
+			if(counter>=size[key]-1) counter = 0;
+			else counter++;
+			keypad_process('\b');
+			return(sym_table[key][counter]);
+		}
 	}
 	else
 	{
-		if(key!=3)
+		if(key==3 || key == 7)
 		{
-			curr_key=key;
-			counter=0;
-			//keypad_process(' ');
-			return(sym_table[key][counter]);
-		}
-		else
-		{
-			 if(key==3)
+			if(key==3)
 			{
 				return(' ');
 			}
@@ -189,6 +182,13 @@ char keypad_getchar(int key)
 				keypad_process('\b');
 				return('\0');
 			}
+		}
+		else
+		{
+			curr_key=key;
+			counter=0;
+			//keypad_process(' ');
+			return(sym_table[key][counter]);
 		}
 	}
 }
