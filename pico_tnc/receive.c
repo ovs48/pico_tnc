@@ -110,7 +110,7 @@ void receive_init(void)
         int adc_pin = ADC_GPIO + i;
 
         adc_gpio_init(adc_pin);
-        adc_rr_mask |= 1 << i;
+        adc_rr_mask |= 1 << (i+1);
 
         tnc_t *tp = &tnc[i];
 
@@ -128,7 +128,7 @@ void receive_init(void)
     }
 
     adc_init();
-    adc_select_input(0); // start at ADC 0
+    adc_select_input(1); // start at ADC 0
     adc_set_round_robin(adc_rr_mask);
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
