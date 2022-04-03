@@ -59,6 +59,25 @@ static void gps_send(uint8_t *buf, int len)
 {
     static uint32_t gps_timer = 0;
 
+    if (!strncmp("$GPRMC", buf, 6)) {
+	char *str[32],*b=buf,*s;
+	int idx=0;
+	char *saveptr;
+	while (idx < 31 && (s=strtok_r(b,",",&saveptr)) != NULL) {
+		b=NULL;
+		str[idx++]=s;
+		str[idx]=NULL;
+	}
+	static int count=0;
+	if (count++ > 10) {
+		count=0;
+		if (idx > 6 && !strcmp(str[2],"A")) {
+			strcpy(str[3]+7,str[4]);
+			strcpy(str[5]+8,str[6]);
+			debug_printf("%s %s\r\n",str[3],str[5]);
+		}
+	}
+    }
     if (tnc_time() - gps_timer < GPS_INTERVAL) return;
 
     if ((param.gps == GPGGA && !strncmp("$GPGAA", buf, 6))
@@ -72,11 +91,17 @@ static void gps_send(uint8_t *buf, int len)
 
 void gps_input(int ch)
 {
+#if 0
+    static int count;
+    if (count++ > 500) 
+	    usb_write_char(ch);
+#endif
     if (ch == DOLLAR) gps_idx = 0;
 
     if (gps_idx < GPS_LEN) gps_buf[gps_idx++] = ch;
 
     if (ch == LF) {
+	gps_buf[gps_idx-1]='\0';
         gps_send(gps_buf, gps_idx);
         gps_idx = 0;
     }
