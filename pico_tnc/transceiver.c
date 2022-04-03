@@ -26,6 +26,16 @@ transceiver_init(void)
 #endif
 }
 
+void
+transceiver_input(void)
+{
+	while (uart_is_readable(uart0)) {
+		int ch = uart_getc(uart0);
+		usb_write_char(ch);
+    	}
+}
+
+
 bool
 cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 {

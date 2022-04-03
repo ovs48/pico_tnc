@@ -263,6 +263,8 @@ enum SEND_STATE {
     SP_CALIBRATE_OFF,
 };
 
+void debug_sprintf(const char *fmt, ...);
+
 #ifdef ENABLE_KEYPAD
 extern void keypad_init(void);
 void keypad_poll(void);
@@ -283,6 +285,7 @@ bool cmd_encoder(tty_t *ttyp, uint8_t *buf, int len);
 
 #ifdef ENABLE_TRANSCEIVER
 extern void transceiver_init(void);
-bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
+extern void transceiver_input(void);
+extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
