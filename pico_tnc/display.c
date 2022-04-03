@@ -195,7 +195,7 @@ cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 	tty_write_str(ttyp, "Done.\r\n");
 #else
 	display_clear(&dc);
-	display_write_do(&dc, "OVS48",5);
+	display_write_do(&dc, "OV?\b \bS48",9);
 	display_update_do(&dc);
 #endif
 	return true;

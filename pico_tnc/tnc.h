@@ -263,7 +263,7 @@ enum SEND_STATE {
     SP_CALIBRATE_OFF,
 };
 
-void debug_sprintf(const char *fmt, ...);
+void debug_printf(const char *fmt, ...);
 
 #ifdef ENABLE_KEYPAD
 extern void keypad_init(void);
