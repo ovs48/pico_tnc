@@ -348,7 +348,7 @@ void send(void)
                     
             case SP_WAIT_CLR_CH:
                 //printf("(%d) send: SP_WAIT_CLR_CH\n", tnc_time());
-                if (tp->kiss_fullduplex || !tp->cdt) {
+                if (tp->kiss_fullduplex || !tp->cdt || 1) {
                     tp->send_state = SP_P_PERSISTENCE;
                     continue;
                 }
