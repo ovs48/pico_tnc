@@ -10,12 +10,39 @@ static int active_row=-1;
 static int active_col=-1;
 static char debounce_counter,current_key,last_key;
 
-static char key_table[][4]={
-	{'1','2','3','A'},	
-	{'4','5','6','B'},	
-	{'7','8','9','C'},	
-	{'*','0','#','D'},	
+static char sym_table[][16]=
+{
+	{'1', '.', ',', '?', '!', '@', '&', '`', '%', '-', ':', '*', '#'},
+	{'2', 'A', 'B', 'C'},
+	{'3', 'D', 'E', 'F'},
+	{'a'},
+	{'4', 'G', 'H', 'I'},
+	{'5', 'J', 'K', 'L'},
+	{'6', 'M', 'N', 'O'},
+	{'b'},
+	{'7', 'P', 'Q', 'R', 'S'},
+	{'8', 'T', 'U', 'V'},
+	{'9', 'W', 'X', 'Y', 'Z'},
+	{'c'},
+	{'*'},
+	{'0', ' '},
+	{'#'},	//Modifier
+	{'d'},
 };
+
+/*static int* key_table[][4]={
+	{key_1, key_2 ,key_3, key_A},	
+	{key_4,key_5,key_6, key_B},	
+	{key_7,key_8,key_9, key_C},	
+	{key_star ,key_0, key_hash, key_D},	
+};*/
+
+static int size[16]=
+{
+	13, 4, 4, 1, 4, 4, 4, 1, 5, 4, 5, 1, 1, 2, 1, 1
+};
+
+static void keypad_process(char c);
 
 static void
 disable_rows(void)
@@ -105,12 +132,52 @@ cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
 		disable_rows();
 	}
 	enable_rows();
+	keypad_process('_');
 	return true;
+}
+
+
+char keypad_getchar(int key)
+{
+	static int curr_key=0;
+	static int counter=0;
+	if(curr_key==key)
+	{
+		keypad_process('\b');
+		if(key!=3)
+		{
+			if(counter>=size[key]-1) counter = 0;
+			else counter++;
+			keypad_process('\b');
+			return(sym_table[key][counter]);
+		}
+		else
+		{
+			keypad_process('\b');
+			keypad_process(' ');
+			return('_');
+		}
+	}
+	else
+	{
+		if(key!=3)
+		{
+			curr_key=key;
+			counter=0;
+			keypad_process('\b');
+			return(sym_table[key][counter]);
+		}
+		else
+		{
+			return('_');
+		}
+	}
 }
 
 static void
 keypad_get(void)
 {
+	int key;
 	int i;
 	if (active_col == -1) {
 		active_col = get_col();
@@ -131,7 +198,10 @@ keypad_get(void)
 			active_col = get_col();
 			if (active_col != -1) {
 				active_row = i;
-				current_key=key_table[active_col][active_row];
+
+				key=(active_col*4) + active_row;
+				current_key = keypad_getchar(key);
+				
 #if 0
 				tty_write_char(&tty[0],'c');
 				tty_write_byte(&tty[0],active_col);
