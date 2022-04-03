@@ -31,16 +31,19 @@ static int init;
 void
 transceiver_input(void)
 {
-	if (init < 2000) {
+	if (init < 4000) {
 		init++;
-		if (init == 500) {
+		if (init == 400) {
 			transceiver_command("AT+DMOCONNECT\r\n");
 		}
-		if (init == 1000) {
-			transceiver_command("AT+DMOSETGROUP=0,144.8000,144.8000,0000,8,0000\r\n");
+		if (init == 2900) {
+			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n");
 		}
-		if (init == 1500) {
-			transceiver_command("AT+DMOSETVOLUME=8\r\n");
+		if (init == 3400) {
+			transceiver_command("AT+DMOSETVOLUME=1\r\n");
+		}
+		if (init == 3900) {
+			transceiver_command("AT+SETFILTER=0,1,1\r\n");
 		}
 	}
 	while (uart_is_readable(uart0)) {
