@@ -35,5 +35,6 @@ extern bool converse_mode;
 extern bool calibrate_mode;
 extern uint8_t calibrate_idx;
 
+void cmd_do(tty_t *ttyp, uint8_t *buf, int len, int flags);
 void cmd(tty_t *ttyp, uint8_t *buf, int len);
 void calibrate(void);

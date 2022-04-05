@@ -108,6 +108,7 @@ static const uint8_t *gps_str[] = {
     "$GPGGA",
     "$GPGLL",
     "$GPRMC",
+    "OFF",
 };
 
 // indicate converse mode
@@ -227,9 +228,21 @@ static int callsign2ascii(uint8_t *buf, callsign_t *c)
     return i;
 }
 
+static bool
+is_cmd(uint8_t *buf, int len)
+{
+    return (buf && buf[0] && (len != 5 || strncmp(buf,"query",len)));
+}
+
+static bool
+is_help(uint8_t *buf, int len)
+{
+    return (buf && buf[0] && len == 4 && !strncmp(buf,"help",len));
+}
+
 static bool cmd_mycall(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         return read_call(buf, &param.mycall) != NULL;
 
@@ -253,7 +266,7 @@ static bool cmd_unproto(tty_t *ttyp, uint8_t *buf, int len)
     uint8_t *p;
 
 
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         p = read_call(buf, &param.unproto[0]);
         if (p == NULL) return false;
@@ -295,7 +308,7 @@ static bool cmd_unproto(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_btext(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf,len)) {
 
         uint8_t *p = buf;
         int i;
@@ -322,7 +335,7 @@ static bool cmd_btext(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_beacon(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         static uint8_t const every[] = "EVERY";
         uint8_t const *s = every;
@@ -368,7 +381,7 @@ static bool cmd_beacon(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_monitor(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         if (!strncasecmp(buf, "ALL", 3)) {
             param.mon = MON_ALL;
@@ -399,7 +412,7 @@ static bool cmd_monitor(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_digipeat(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         if (!strncasecmp(buf, "ON", 2)) {
             param.digi = true;
@@ -425,7 +438,7 @@ static bool cmd_digipeat(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_myalias(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_cmd(buf, len)) {
 
         return read_call(buf, &param.myalias) != NULL;
 
@@ -485,9 +498,14 @@ static bool cmd_echo(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_gps(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
-
-        for (int i = 0; i < 3; i++) {
+    if (is_help(buf, len)) {
+        for (int i = 0; i < 4; i++) {
+        	tty_write_str(ttyp, "GPS ");
+		tty_write_str(ttyp, gps_str[i]);
+		tty_write_str(ttyp, "\r\n");
+	}
+    } else if (is_cmd(buf, len)) {
+        for (int i = 0; i < 4; i++) {
             uint8_t const *str = gps_str[i];
         
             if (!strncasecmp(buf, str, strlen(str))) {
@@ -496,7 +514,6 @@ static bool cmd_gps(tty_t *ttyp, uint8_t *buf, int len)
             }
         }
         return false;
-
     } else {
 
         tty_write_str(ttyp, "GPS ");
@@ -543,7 +560,9 @@ static bool cmd_trace(tty_t *ttyp, uint8_t *buf, int len)
 
 static bool cmd_txdelay(tty_t *ttyp, uint8_t *buf, int len)
 {
-    if (buf && buf[0]) {
+    if (is_help(buf, len)) {
+	tty_write_str(ttyp, "TXDELAY 1-255\r\n");
+    } else if (is_cmd(buf, len)) {
         
         int t = atoi(buf);
 
@@ -554,6 +573,8 @@ static bool cmd_txdelay(tty_t *ttyp, uint8_t *buf, int len)
         // set txdelay
         tnc[0].kiss_txdelay = param.txdelay * 2 / 3;
 
+    } else if (is_help(buf, len)) {
+	tty_write_str(ttyp, "TXDELAY 1-255\r\n");
     } else {
         uint8_t temp[8];
 
@@ -717,13 +738,16 @@ static const cmd_t cmd_list[] = {
 #ifdef ENABLE_TRANSCEIVER
     { "TRANSCEIVER", 11, cmd_transceiver, },
 #endif
+#ifdef ENABLE_GUI
+    { "GUI", 3, cmd_gui, },
+#endif
 
     // end mark
     { NULL, 0, NULL, },
 };
 
 
-void cmd(tty_t *ttyp, uint8_t *buf, int len)
+void cmd_do(tty_t *ttyp, uint8_t *buf, int len, int flags)
 {
 #if 0
     tud_cdc_write(buf, len);
@@ -777,10 +801,14 @@ void cmd(tty_t *ttyp, uint8_t *buf, int len)
     if (matched == 1) {
 
         if (mp->func(ttyp, param, param_len)) {
-            if (!(converse_mode | calibrate_mode)) tty_write_str(ttyp, "\r\nOK\r\n");
+            if (!(converse_mode | calibrate_mode | (flags & 1))) tty_write_str(ttyp, "\r\nOK\r\n");
             return;
         }
     }
-
     tty_write_str(ttyp, "\r\n?\r\n");
+}
+
+void cmd(tty_t *ttyp, uint8_t *buf, int len)
+{
+	cmd_do(ttyp, buf, len, 0);
 }

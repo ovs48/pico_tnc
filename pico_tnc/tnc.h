@@ -289,3 +289,6 @@ extern void transceiver_input(void);
 extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
+#ifdef ENABLE_GUI
+extern bool cmd_gui(tty_t *ttyp, uint8_t *buf, int len);
+#endif
