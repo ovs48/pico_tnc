@@ -132,6 +132,17 @@ cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
 	return true;
 }
 
+void backspace()
+{
+char backspc[3]={'\b', ' ', '\b'};
+#if 0
+	tty_write_char(&tty[0],c);
+#else
+for(int i=0; i<3; i++)
+	display_write(&backspc[i], 1);
+	display_update();
+#endif
+}
 
 char keypad_getchar(int key)
 {
@@ -139,8 +150,6 @@ char keypad_getchar(int key)
 	static int counter=0;
 	if(curr_key==key)
 	{
-		keypad_process('\b');
-		keypad_process(' ');
 		if(key==3 || key ==7)
 		{
 			if (key==3)
@@ -149,19 +158,17 @@ char keypad_getchar(int key)
 			}
 			else
 			{
-				keypad_process('\b');
-				keypad_process(' ');
-				keypad_process('\b');
+				backspace();
 				return('\0');
 			}
 		}
 		else 
 		{
-			if(counter>=strlen(sym_table[key]))
+			if(counter>=strlen(sym_table[key])-1)
 				counter = 0;
 			else
 				counter++;
-			keypad_process('\b');
+			backspace();
 			return(sym_table[key][counter]);
 		}
 	}
@@ -175,9 +182,7 @@ char keypad_getchar(int key)
 			}
 			else
 			{
-				keypad_process('\b');
-				keypad_process(' ');
-				keypad_process('\b');
+				backspace();
 				return('\0');
 			}
 		}
@@ -185,7 +190,6 @@ char keypad_getchar(int key)
 		{
 			curr_key=key;
 			counter=0;
-			//keypad_process(' ');
 			return(sym_table[key][counter]);
 		}
 	}
@@ -217,7 +221,7 @@ keypad_get(void)
 				active_row = i;
 
 				key=(active_col*4) + active_row;
-				current_key = keypad_getchar(key);
+				current_key = key+1;
 				
 #if 0
 				tty_write_char(&tty[0],'c');
@@ -258,8 +262,8 @@ keypad_poll(void)
 	if (current_key == last_key) {
 		if (debounce_counter < 10) {
 			debounce_counter++;
-			if (debounce_counter == 10 && current_key != '\0') {
-				keypad_process(current_key);	
+			if (debounce_counter == 10 && current_key != 0) {
+				keypad_process(keypad_getchar(current_key-1));	
 			}
 		}
 	} else {
