@@ -124,7 +124,7 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 	display_cursor_clear(dc);
 	while (len >= (dc->cursor_state == CURSOR_STATE_OFF ? 1:0)) {
 		uint8_t c = len?*data++:0;
-		len--;
+		len-=1;
 		if (c >= 32 || c == '\0') {
 			bool done=true;
 			do {
@@ -134,11 +134,14 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 					done=false;
 				}  else {
 					if (dc->cursor_x < dc->window.w && dc->cursor_y < dc->window.h) {
-						if (c == 32) {
+						if (c == 32|| c=='\b') {
 							display_space(dc);
-						} else if (c != 0) {
+						} 
+						else if (c != 0) {
+							display_space(dc);
 							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, c);
-						}  else {
+						}  
+						else {
 							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, '_');
 							dc->cursor_state == CURSOR_STATE_DRAWN;	
 						}
