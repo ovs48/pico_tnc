@@ -134,12 +134,11 @@ cmd_keypad(tty_t *ttyp, uint8_t *buf, int len)
 
 void backspace()
 {
-char backspc[3]={'\b', ' ', '\b'};
+char backspc[5]={' ', '\b', '\b', ' ', '\b'};
 #if 0
 	tty_write_char(&tty[0],c);
 #else
-for(int i=0; i<3; i++)
-	display_write(&backspc[i], 1);
+	display_write(&backspc, 5);
 	display_update();
 #endif
 }
