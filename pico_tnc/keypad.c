@@ -147,13 +147,21 @@ char keypad_getchar(int key)
 {
 	static int curr_key=0;
 	static int counter=0;
+	static int modifier=0;	//0 -- Standard, 1 -- Kleinbuchstaben, 2 -- Nur Zahlen
 	if(curr_key==key)
 	{
-		if(key==3 || key ==7)
+		if(key==3 || key ==7 || key==14)
 		{
 			if (key==3)
 			{
 				return(' ');
+			}
+			else if(key==14)
+			{
+				if(modifier==2) 
+					modifier=0;
+				else modifier++;
+				return('\0');
 			}
 			else
 			{
@@ -167,17 +175,35 @@ char keypad_getchar(int key)
 				counter = 0;
 			else
 				counter++;
-			backspace();
-			return(sym_table[key][counter]);
+			if(modifier!=2) backspace();
+			if(modifier==0)
+				return(sym_table[key][counter]);
+			else if(modifier==1)
+			{
+				char ret = sym_table[key][counter];
+				if(ret >= 65 && ret <= 90) ret+=32;
+				return ret;
+			}
+			else
+			{
+				return(sym_table[key][0]);
+			}
 		}
 	}
 	else
 	{
-		if(key==3 || key == 7)
+		if(key==3 || key == 7 || key==14)
 		{
 			if(key==3)
 			{
 				return(' ');
+			}
+			else if(key==14)
+			{
+				if(modifier==2) 
+					modifier=0;
+				else modifier++;
+				return('\0');
 			}
 			else
 			{
@@ -189,7 +215,18 @@ char keypad_getchar(int key)
 		{
 			curr_key=key;
 			counter=0;
-			return(sym_table[key][counter]);
+			if(modifier==0)
+				return(sym_table[key][0]);
+			else if(modifier==1)
+			{
+				char ret = sym_table[key][0];
+				if(ret >= 65 && ret <= 90) ret+=32;
+				return ret;
+			}
+			else
+			{
+				return(sym_table[key][0]);
+			}
 		}
 	}
 }
