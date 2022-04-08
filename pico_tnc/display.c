@@ -8,6 +8,8 @@
 #ifdef ENABLE_DISPLAY
 
 extern const uint8_t font_8x5[];
+tty_t display_tty;
+
 
 static struct display_context {
 	enum {
@@ -82,6 +84,10 @@ display_init_font(struct display_context *dc, const uint8_t *font, uint32_t scal
 void
 display_init(void)
 {
+	display_tty.num = TTY_N;
+        display_tty.tty_mode = TTY_GUI;
+        display_tty.tty_serial = TTY_DISPLAY;
+
 	i2c_init(I2C_OLED, 400 * 1000); /* 400kHz */
 	gpio_set_function(GPIO_OLED_SDA, GPIO_FUNC_I2C);
 	gpio_set_function(GPIO_OLED_SCL, GPIO_FUNC_I2C);
@@ -113,6 +119,7 @@ static void
 display_cursor_clear(struct display_context *dc)
 {
 	if (dc->cursor_state == CURSOR_STATE_DRAWN) {
+		// debug_printf("-%d,%d",dc->cursor_x, dc->cursor_y);
 		display_space(dc);
 		dc->cursor_state == CURSOR_STATE_ON;
 	}
@@ -134,7 +141,7 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 					done=false;
 				}  else {
 					if (dc->cursor_x < dc->window.w && dc->cursor_y < dc->window.h) {
-						if (c == 32|| c=='\b') {
+						if (c == 32) {
 							display_space(dc);
 						} 
 						else if (c != 0) {
@@ -142,8 +149,9 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, c);
 						}  
 						else {
+							// debug_printf("+%d,%d",dc->cursor_x, dc->cursor_y);
 							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, '_');
-							dc->cursor_state == CURSOR_STATE_DRAWN;	
+							dc->cursor_state = CURSOR_STATE_DRAWN;	
 						}
 						if (c != 0)
 							dc->cursor_x+=dc->cw;
@@ -153,6 +161,8 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 		} else if (c == '\b') {
 			if (dc->cursor_x >= dc->window.x+dc->cw)
 				dc->cursor_x-=dc->cw;
+		} else if (c == '\f') {
+			display_clear(dc);
 		} else if (c == '\r') {
 			dc->cursor_x=dc->window.x;
 		} else if (c == '\n') {
@@ -160,6 +170,7 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 			dc->cursor_y+=dc->ch;
 		}
 	}
+	// debug_printf("\r\n");
 }
 
 void

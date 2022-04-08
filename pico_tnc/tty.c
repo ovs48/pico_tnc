@@ -81,23 +81,29 @@ void tty_init(void)
 
 void tty_write(tty_t *ttyp, uint8_t const *data, int len)
 {
-    if (ttyp->tty_serial == TTY_USB) {
+    switch(ttyp->tty_serial) {
+    case TTY_USB:
         usb_write(data, len);
-        return;
-    }
-
+        break;
 #if 0
-    if (ttyp->tty_serial == TTY_UART0) serial_write(data, len);
+    case TTY_UART0:
+        serial_write(data, len);
+	break;
 #endif
+    case TTY_DISPLAY:
+        display_write(data, len);
+        break;
+    }
 }
 
 void tty_write_char(tty_t *ttyp, uint8_t ch)
 {
+    tty_write(ttyp, &ch, 1);
+#if 0
     if (ttyp->tty_serial == TTY_USB) {
         usb_write_char(ch);
         return;
     }
-#if 0
     if (ttyp->tty_serial == TTY_UART0) serial_write_char(ch);
 #endif
 }

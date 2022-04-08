@@ -219,6 +219,7 @@ enum TTY_MODE {
     TTY_TERMINAL = 0,
     TTY_GPS,
     TTY_TRANSCEIVER,
+    TTY_GUI,
 };
 
 enum TTY_SERIAL {
@@ -275,7 +276,8 @@ bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
 extern void display_init(void);
 extern void display_write(uint8_t const *data, int len);
 extern void display_update(void);
-bool cmd_display(tty_t *ttyp, uint8_t *buf, int len);
+extern bool cmd_display(tty_t *ttyp, uint8_t *buf, int len);
+extern tty_t display_tty;
 #endif
 
 #ifdef ENABLE_ENCODER
@@ -291,4 +293,5 @@ extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 
 #ifdef ENABLE_GUI
 extern bool cmd_gui(tty_t *ttyp, uint8_t *buf, int len);
+extern void gui_process_char(char c, tty_t *ttyp);
 #endif

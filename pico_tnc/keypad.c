@@ -137,8 +137,9 @@ void backspace()
 char backspc[5]={' ', '\b', '\b', ' ', '\b'};
 #if 0
 	tty_write_char(&tty[0],c);
-#else
-	display_write(&backspc, 5);
+#endif
+#if 0
+	display_write(backspc, 5);
 	display_update();
 #endif
 }
@@ -285,10 +286,12 @@ keypad_process(char c)
 {
 #if 0
 	tty_write_char(&tty[0],c);
-#else
+#endif
+#if 0
 	display_write(&c, 1);
 	display_update();
 #endif
+	gui_process_char(c, &display_tty);
 }
 
 void

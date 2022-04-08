@@ -5,64 +5,193 @@
 
 #ifdef ENABLE_GUI
 
+static char buffer[64];
 struct menu_entry {
-	struct menu_entry *(*func)(struct menu_entry *);
+	struct menu_entry *(*func)(struct menu_entry *, tty_t *, char *);
 	void *args;
 };
 
-struct menu_entry *
-menu_parameter(struct menu_entry *entry)
+struct menus {
+	char *name;
+	struct menu_entry *entries;
+};
+
+static int menu_i;
+struct menu_entry *selection[11];
+static void menu_display(char *name, tty_t *ttyp);
+
+static void
+menu_display_entries(struct menu_entry *e, tty_t *ttyp)
 {
+	menu_i=1;
+	memset(selection, 0, sizeof(selection));
+	tty_write_char(ttyp, '\f');
+	while(e->func) {
+		e->func(e, ttyp, NULL);
+		e++;
+	}
+	selection[10]=e;
+}
+
+static void
+menu_idx(struct menu_entry *e, tty_t *ttyp)
+{
+	snprintf(buffer,sizeof(buffer), "%d ",menu_i);
+	if (menu_i >= 1 && menu_i <= 10) {
+		selection[menu_i-1]=e;
+	}
+	tty_write(ttyp, buffer, strlen(buffer));
+	menu_i++;
+}
+
+static struct menu_entry *
+menu_title(struct menu_entry *e, tty_t *ttyp, char *mode)
+{
+	char *txt=e->args;
+	tty_write(ttyp, txt, strlen(txt));
+	tty_write(ttyp, "\r\n", 2);
+}
+
+static struct menu_entry *
+menu_gui(struct menu_entry *e, tty_t *ttyp, char *mode)
+{
+	char *txt=e->args;
+	if (!mode) {
+		menu_idx(e, ttyp);
+		tty_write(ttyp, txt, strlen(txt));
+		tty_write(ttyp, "\r\n", 2);
+	} else {
+		menu_display(txt, ttyp);
+	}
+}
+
+static struct menu_entry *
+menu_parameter(struct menu_entry *e, tty_t *ttyp, char *mode)
+{
+	menu_idx(e, ttyp);
+	snprintf(buffer,sizeof(buffer),"%s query",(char *)e->args);
+	cmd_do(ttyp, buffer, strlen(buffer), 1);
 	return NULL;
 }
 
-struct menu_entry root_menu[] = {
-	{menu_parameter, "menu settings"},
+static struct menu_entry *
+menu_back(struct menu_entry *e, tty_t *ttyp, char *mode)
+{
+	if (e->args) {
+		if (!mode) {
+			tty_write(ttyp,"# Back\r\n",8);
+			selection[10]=e;
+		} else
+			menu_display_entries(e, ttyp);
+	} else if (!mode) {
+			tty_write(ttyp,"# Exit\r\n",8);
+			selection[10]=e;
+		}
+}
+
+static struct menu_entry menu_root[] = {
+	{menu_title, "Menu"},
+	{menu_gui, "Transmit"},
+	{menu_gui, "Settings"},
+	{menu_back, NULL},
 	{NULL, NULL},
 };
 
-/* Transmit */
-/* Settings */
+static struct menu_entry menu_settings[] = {
+	{menu_title, "Settings"},
+	{menu_gui, "APRS"},
+	{menu_gui, "Beacon"},
+	{menu_gui, "Receive"},
+	{menu_gui, "Transmit"},
+	{menu_back, menu_root},
+	{NULL, NULL},
+};
 
-/* APRS MYCALL, MYALIAS */
-/* Beacon GPS, BTEXT, BEACON */
-/* RX MONITOR, DIGIPEAT */
-/* TX TXDELAY, UNPROTO */
+static struct menu_entry menu_aprs[] = {
+	{menu_title, "APRS"},
+	{menu_parameter, "Mycall"},
+	{menu_parameter, "Myalias"},
+	{menu_back, menu_settings},
+	{NULL, NULL},
+};
 
-struct menu_entry settings_menu[] = {
-	{menu_parameter, "TXDELAY"},
+static struct menu_entry menu_beacon[] = {
+	{menu_title, "Beacon"},
 	{menu_parameter, "GPS"},
-	{menu_parameter, "MONITOR"},
-	{menu_parameter, "DIGIPEAT"},
-	{menu_parameter, "BEACON"},
-	{menu_parameter, "UNPROTO"},
-	{menu_parameter, "MYCALL"},
-	{menu_parameter, "MYALIAS"},
-	{menu_parameter, "BTEXT"},
+	{menu_parameter, "Btext"},
+	{menu_parameter, "Beacon"},
+	{menu_back, menu_settings},
 	{NULL, NULL},
 };
+
+static struct menu_entry menu_receive[] = {
+	{menu_title, "Receive"},
+	{menu_parameter, "Monitor"},
+	{menu_parameter, "Digipeat"},
+	{menu_back, menu_settings},
+	{NULL, NULL},
+};
+
+static struct menu_entry menu_transmit[] = {
+	{menu_title, "Transmit"},
+	{menu_parameter, "TxDelay"},
+	{menu_parameter, "Unproto"},
+	{menu_back, menu_settings},
+	{NULL, NULL},
+};
+
+
+static struct menu_entry *menus[] = {
+	menu_settings,
+	menu_aprs,
+	menu_beacon,
+	menu_receive,
+	menu_transmit,
+	menu_root
+};
+
+static void
+menu_display(char *name, tty_t *ttyp)
+{
+	struct menu_entry **e=menus;
+	debug_printf("Menu %s\r\n",name);
+	for (;;) {
+		char *title=(*e)->args;
+		if (!strcasecmp("Menu",title) || !strcasecmp(name, title)) {
+			menu_display_entries(*e, ttyp);
+			break;
+		}
+		e++;
+	}
+	
+}
 
 void
 gui_init(void)
 {
 }
 
+void
+gui_process_char(char c, tty_t *ttyp)
+{
+	struct menu_entry *e;
+	debug_printf("Got '%c'\r\n", c);
+	if (c == '*') {
+		menu_display(NULL, ttyp);
+	}
+	if (c >= '0' && c <= '9') {
+		e=selection[c == '0'?9:c-'1'];
+		debug_printf("Selection %p\r\n", e);
+		if (e)
+			e->func(e, ttyp, "enter");
+	}
+	if (c == '#' && selection[10])
+		e->func(selection[10], ttyp, "enter");
+}
+
 bool
 cmd_gui(tty_t *ttyp, uint8_t *buf, int len)
 {
-	struct menu_entry *e=root_menu;
-	if (len == 8 && !strncmp(buf, "settings",len)) {
-		e=settings_menu;
-	}
-	int i=1;
-	while(e->func) {
-		char buffer[64];
-		snprintf(buffer,sizeof(buffer), "%d ",i++);
-		tty_write(ttyp, buffer, strlen(buffer));
-		snprintf(buffer,sizeof(buffer),"%s query",(char *)e->args);
-		cmd_do(ttyp, buffer, strlen(buffer), 1);
-		e++;
-	}
         return true;
 }
 
