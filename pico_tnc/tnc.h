@@ -295,3 +295,6 @@ extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 extern bool cmd_gui(tty_t *ttyp, uint8_t *buf, int len);
 extern void gui_process_char(char c, tty_t *ttyp);
 #endif
+
+extern const char *gps_getvar(const char *var);
+extern const char *substitute_vars(const char *str);

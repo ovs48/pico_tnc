@@ -27,6 +27,7 @@ add_executable(pico_tnc
 	pico-ssd1306/ssd1306.c
 	gui.c
 	debug.c
+	var.c
         )
 
 pico_generate_pio_header(pico_tnc ${CMAKE_CURRENT_LIST_DIR}/pio_dac.pio)

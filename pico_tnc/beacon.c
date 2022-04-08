@@ -42,11 +42,13 @@ void beacon_reset(void)
 
 void beacon(void)
 {
+    const char *text;
     if (!param.beacon) return;
 
     if (tnc_time() - beacon_time < param.beacon * 60 * 100) return; // convert minutes to 10 ms
-    
-    usb_write("beacon\r\n",8);
-    send_unproto(&tnc[BEACON_PORT], param.btext, strlen(param.btext));
+  
+    text=substitute_vars(param.btext); 
+    debug_printf("beacon %s\r\n",text);
+    send_unproto(&tnc[BEACON_PORT], text, strlen(text));
     beacon_time = tnc_time();
 }

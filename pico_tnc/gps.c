@@ -55,10 +55,20 @@ static int gps_idx = 0;
 #define DEL '\x7f'
 #define BELL '\a'
 
+static char lat[10]="00.0000N";
+static char lon[10]="000.0000E";
+
+const char *gps_getvar(const char *name)
+{
+	if (!strcmp(name,"LAT"))
+		return lat;
+	if (!strcmp(name,"LON"))
+		return lon;
+}
+
 static void gps_send(uint8_t *buf, int len)
 {
     static uint32_t gps_timer = 0;
-#if 0
     if (!strncmp("$GPRMC", buf, 6)) {
 	char *str[32],*b=buf,*s;
 	int idx=0;
@@ -68,17 +78,13 @@ static void gps_send(uint8_t *buf, int len)
 		str[idx++]=s;
 		str[idx]=NULL;
 	}
-	static int count=0;
-	if (count++ > 10) {
-		count=0;
-		if (idx > 6 && !strcmp(str[2],"A")) {
-			strcpy(str[3]+7,str[4]);
-			strcpy(str[5]+8,str[6]);
-			debug_printf("%s %s\r\n",str[3],str[5]);
-		}
+	if (idx > 6 && !strcmp(str[2],"A")) {
+		strcpy(str[3]+7,str[4]);
+		strncpy(lat, str[3], 8);
+		strcpy(str[5]+8,str[6]);
+		strncpy(lon, str[5], 9);
 	}
     }
-#endif
     if (tnc_time() - gps_timer < GPS_INTERVAL) return;
 
     if ((param.gps == GPGGA && !strncmp("$GPGAA", buf, 6))

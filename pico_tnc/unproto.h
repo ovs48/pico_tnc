@@ -28,4 +28,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "tnc.h"
 
-void send_unproto(tnc_t *tp, uint8_t *data, int len);
+void send_unproto(tnc_t *tp, const uint8_t *data, int len);

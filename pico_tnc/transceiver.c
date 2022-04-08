@@ -38,9 +38,10 @@ transceiver_input(void)
 		}
 		if (init == 2900) {
 			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n");
+			// transceiver_command("AT+DMOSETGROUP=1,145.6250,145.6250,0000,0,0000\r\n");
 		}
 		if (init == 3400) {
-			transceiver_command("AT+DMOSETVOLUME=1\r\n");
+			transceiver_command("AT+DMOSETVOLUME=3\r\n");
 		}
 		if (init == 3900) {
 			transceiver_command("AT+SETFILTER=0,1,1\r\n");

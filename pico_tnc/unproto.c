@@ -39,7 +39,7 @@ static uint8_t addr[AX25_ADDR_LEN];
 #define CON_PID_LEN 2
 static const uint8_t con_pid[CON_PID_LEN] = { 0x03, 0xf0 }; // control, PID
 
-void send_unproto(tnc_t *tp, uint8_t *data, int len)
+void send_unproto(tnc_t *tp, const uint8_t *data, int len)
 {
     uint8_t byte;
     uint32_t fcs;

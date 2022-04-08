@@ -655,6 +655,7 @@ static bool cmd_help(tty_t *ttyp, uint8_t *buf, int len)
 {
     //printf("tud_cdc_write_available() = %d\n", tud_cdc_write_available());
 
+    tty_write_str(ttyp, substitute_vars("LAT=$LAT LON=$LON\r\n"));
     tty_write_str(ttyp, help_str);
 
     //printf("tud_cdc_write_available() = %d\n", tud_cdc_write_available());
