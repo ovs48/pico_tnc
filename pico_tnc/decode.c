@@ -242,7 +242,7 @@ void demodulator(tnc_t *tp, int adc)
     int val;
     int bit;
 
-#if 1
+#if 0
     static int count,sum,suma,min=65535,max=0;
     if (adc > max) max=adc;
     if (adc < min) min=adc;

@@ -20,7 +20,7 @@ substitute_var(const char *start, char *dest, int maxlen)
 			ptr++;
 		} else {
 			int len=ptr-start;
-			debug_printf("len=%d<%d\r\n",len,maxlen);
+			// debug_printf("len=%d<%d\r\n",len,maxlen);
 			if (len < maxlen) {
 				const char *repl;
 				strncpy(dest, start, len);
