@@ -55,8 +55,8 @@ static int gps_idx = 0;
 #define DEL '\x7f'
 #define BELL '\a'
 
-static char lat[10]="00.0000N";
-static char lon[10]="000.0000E";
+static char lat[10]="0000.00N";
+static char lon[10]="00000.00E";
 
 const char *gps_getvar(const char *name)
 {
