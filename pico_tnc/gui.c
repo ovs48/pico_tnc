@@ -25,7 +25,7 @@ menu_display_entries(struct menu_entry *e, tty_t *ttyp)
 {
 	menu_i=1;
 	memset(selection, 0, sizeof(selection));
-	tty_write_char(ttyp, '\f');
+	tty_write(ttyp, "\eE",2);
 	while(e->func) {
 		e->func(e, ttyp, NULL);
 		e++;
@@ -194,7 +194,9 @@ gui_display_packet(tnc_t *tp)
 {
 	uint8_t *data = tp->pdata.data;
 	if (param.mon == MON_ALL || (param.mon == MON_ME && ax25_callcmp(&param.mycall, &data[0]))) {
+		tty_write(&display_tty, "\ew", 2);
 		display_packet_do(&display_tty, tp, &tp->pdata, DISPLAY_FLAGS_SRC|DISPLAY_FLAGS_DATA);
+		tty_write(&display_tty, "\ev", 2);
 	}
 }
 

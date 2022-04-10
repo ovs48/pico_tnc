@@ -131,6 +131,8 @@ display_cursor_clear(struct display_context *dc)
 	}
 }
 
+/* VT52-alike */
+
 static bool
 display_process_esc(struct display_context *dc, char c)
 {
@@ -197,8 +199,6 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 		} else if (c == '\b') {
 			if (dc->cursor_x >= dc->window.x+dc->cw)
 				dc->cursor_x-=dc->cw;
-		} else if (c == '\f') {
-			display_clear(dc);
 		} else if (c == '\r') {
 			dc->cursor_x=dc->window.x;
 		} else if (c == '\n') {
@@ -244,7 +244,7 @@ cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 	}
 	tty_write_str(ttyp, "Done.\r\n");
 #else
-	char *str="OV?\b \bS48 This is a string fo a test\r\n";
+	char *str="\eEOV?\b \bS48 This is a string fo a test\r\n";
 	display_write(str,strlen(str));
 #endif
 	return true;
