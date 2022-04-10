@@ -133,7 +133,7 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 		uint8_t c = len?*data++:0;
 		len-=1;
 		if (c >= 32 || c == '\0') {
-			bool done=true;
+			bool done;
 			do {
 				if ((dc->wrap & WRAP_FORWARD) && dc->cursor_x+dc->cw > dc->window.w) {
 					dc->cursor_x=dc->window.x;
@@ -156,6 +156,7 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 						if (c != 0)
 							dc->cursor_x+=dc->cw;
 					}
+					done=true;
 				}
 			} while(!done);
 		} else if (c == '\b') {
@@ -208,9 +209,8 @@ cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 	}
 	tty_write_str(ttyp, "Done.\r\n");
 #else
-	display_clear(&dc);
-	display_write_do(&dc, "OV?\b \bS48",9);
-	display_update_do(&dc);
+	char *str="OV?\b \bS48 This is a string fo a test\r\n";
+	display_write(str,strlen(str));
 #endif
 	return true;
 }
