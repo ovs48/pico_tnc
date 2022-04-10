@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <ctype.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "class/cdc/cdc_device.h"
 #include "pico/sync.h"
 
@@ -625,6 +626,16 @@ static bool cmd_converse(tty_t *ttyp, uint8_t *buf, int len)
     return true;
 }
 
+static bool cmd_reset(tty_t *ttyp, uint8_t *buf, int len)
+{
+    if (is_cmd(buf, len)) {
+        reset_usb_boot(0,0);
+    } else {
+        tty_write_str(ttyp, "Reset\r\n");
+    }
+    return true;
+}
+
 static bool cmd_kiss(tty_t *ttyp, uint8_t *buf, int len)
 {
     if (buf && buf[0]) {
@@ -711,6 +722,7 @@ static const cmd_t cmd_list[] = {
     { "HELP", 4, cmd_help, },
     { "?", 1, cmd_help, },
     { "DISP", 4, cmd_disp, },
+    { "RESET", 5, cmd_reset, },
     { "MYCALL", 6, cmd_mycall, },
     { "UNPROTO", 7, cmd_unproto, },
     { "BTEXT", 6, cmd_btext, },

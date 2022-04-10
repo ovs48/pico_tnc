@@ -1,5 +1,6 @@
 #include <string.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "tnc.h"
 #include "tty.h"
 
@@ -69,8 +70,12 @@ static struct menu_entry *
 menu_parameter(struct menu_entry *e, tty_t *ttyp, char *mode)
 {
 	menu_idx(e, ttyp);
-	snprintf(buffer,sizeof(buffer),"%s query",(char *)e->args);
+	if (!mode) 
+		snprintf(buffer,sizeof(buffer),"%s query",(char *)e->args);
+	else
+		snprintf(buffer,sizeof(buffer),"%s help",(char *)e->args);
 	cmd_do(ttyp, buffer, strlen(buffer), 1);
+		
 	return NULL;
 }
 
@@ -93,6 +98,7 @@ static struct menu_entry menu_root[] = {
 	{menu_title, "Menu"},
 	{menu_gui, "Transmit"},
 	{menu_gui, "Settings"},
+	{menu_parameter, "Reset"},
 	{menu_back, NULL},
 	{NULL, NULL},
 };
