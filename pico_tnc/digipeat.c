@@ -42,8 +42,8 @@ static const uint8_t con_pid_ui[2] = { 0x03, 0xf0, };
 
 void digipeat(tnc_t *tp)
 {
-    uint8_t *packet = tp->data;
-    int len = tp->data_cnt;
+    uint8_t *packet = tp->pdata.data;
+    int len = tp->pdata.data_cnt;
 
     if (len < AX25_MIN_LEN) return; // too short
 

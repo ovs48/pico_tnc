@@ -161,8 +161,8 @@ void kiss_input(tty_t * ttyp, int ch)
 
 void kiss_output(tty_t *ttyp, tnc_t *tp)
 {
-    int len = tp->data_cnt;
-    uint8_t *data = tp->data;
+    int len = tp->pdata.data_cnt;
+    uint8_t *data = tp->pdata.data;
 
     // KISS start
     tty_write_char(ttyp, FEND);

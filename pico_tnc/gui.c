@@ -189,9 +189,62 @@ gui_process_char(char c, tty_t *ttyp)
 		e->func(selection[10], ttyp, "enter");
 }
 
+void
+gui_display_packet(tnc_t *tp)
+{
+	uint8_t *data = tp->pdata.data;
+	if (param.mon == MON_ALL || (param.mon == MON_ME && ax25_callcmp(&param.mycall, &data[0]))) {
+		display_packet_do(&display_tty, tp, &tp->pdata, DISPLAY_FLAGS_SRC|DISPLAY_FLAGS_DATA);
+	}
+}
+
+static void
+set_addr(const char *addr, char *dest)
+{
+	int i;
+	for (i = 0 ; i < 7 ; i++) {
+		char c=addr[i];
+		if (i == 6) {
+			if (c >= 'a')
+				c-='a'-10;
+			else
+				c-='0';
+		}
+		dest[i]=c<<1;
+	}
+}
+
 bool
 cmd_gui(tty_t *ttyp, uint8_t *buf, int len)
 {
+	static int idx;
+	char ** test_packets[]={
+		(char *[]){"AZZS480","DH1DF 3","WIDE1 1","WIDE2 2",NULL,":Test1234"},
+		(char *[]){"DH1DF 3","DH1DF f","WIDE1 1","WIDE2 2",NULL,":It works"},
+		(char *[]){"APDW170","DO4DR a","DB0KUHa","WIDE2 1",NULL,":BLN1WXZ  :DWD WARNUNG vor WINDBOEEN in Z bis 10.04. 18:00"},
+		NULL,
+	};
+	tnc_t tp;
+	char *ds=tp.pdata.data;
+	char *d=ds;
+	char **ptr=test_packets[idx++];
+	if (!test_packets[idx])
+		idx=0;
+	while (*ptr) {
+		set_addr(*ptr, d);
+		d+=7;
+		ptr++;
+	}
+	ptr++;	
+	d[-1]|=1;
+	d[0]=0x03;
+	d[1]=0xf0;
+	d+=2;
+	strcpy(d, *ptr);
+	d+=strlen(d);
+	tp.pdata.data_cnt=d-ds+2;
+	display_packet_do(&tty[TTY_USB], &tp, &tp.pdata, DISPLAY_FLAGS_ALL);
+	gui_display_packet(&tp);
         return true;
 }
 

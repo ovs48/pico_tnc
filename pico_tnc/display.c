@@ -13,6 +13,7 @@ tty_t display_tty;
 
 static struct display_context {
 	enum {
+		WRAP_NONE=0,
 		WRAP_FORWARD=1,
 		WRAP_BACKWARD=2,
 	} wrap;
@@ -28,6 +29,10 @@ static struct display_context {
 	struct {
 		uint32_t x,y,w,h;
 	} window;
+	enum {
+		ESCAPE_STATE_NONE,	
+		ESCAPE_STATE_ESCAPE,
+	} escape_state;
 	ssd1306_t disp;
 } dc;
 
@@ -100,7 +105,8 @@ display_init(void)
 	dc.window.h=64;
 	display_init_font(&dc, font_8x5, 1);
 	ssd1306_init(&dc.disp, dc.window.w, dc.window.h, 0x3C, I2C_OLED);
-	ssd1306_clear(&dc.disp);
+	display_clear(&dc);
+	display_update_do(&dc);
 	char *str="init\r\n";
 	display_write(str, strlen(str));
 #if 0
@@ -125,6 +131,34 @@ display_cursor_clear(struct display_context *dc)
 	}
 }
 
+static bool
+display_process_esc(struct display_context *dc, char c)
+{
+	switch (dc->escape_state) {
+	case ESCAPE_STATE_NONE:
+		if (c == '\e') {
+			dc->escape_state=ESCAPE_STATE_ESCAPE;
+			return true;
+		}
+		break;
+	case ESCAPE_STATE_ESCAPE:
+		switch (c) {
+		case 'E':
+			display_clear(dc);
+			break;
+		case 'v':
+			dc->wrap=WRAP_FORWARD;
+			break;
+		case 'w':
+			dc->wrap=WRAP_NONE;
+			break;
+		}
+		dc->escape_state=ESCAPE_STATE_NONE;
+		return true;
+	}
+	return false;
+}
+
 static void
 display_write_do(struct display_context *dc, uint8_t const *data, int len)
 {
@@ -132,7 +166,8 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 	while (len >= (dc->cursor_state == CURSOR_STATE_OFF ? 1:0)) {
 		uint8_t c = len?*data++:0;
 		len-=1;
-		if (c >= 32 || c == '\0') {
+		if (display_process_esc(dc, c)) {
+		} else if (c >= 32 || c == '\0') {
 			bool done;
 			do {
 				if ((dc->wrap & WRAP_FORWARD) && dc->cursor_x+dc->cw > dc->window.w) {

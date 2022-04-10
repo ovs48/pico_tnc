@@ -47,12 +47,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static uint8_t str[STR_LEN];
 
-static void display_packet(tty_t *ttyp, tnc_t *tp)
+static void
+show_ascii(tty_t *ttyp, char c, bool callsign)
+{
+    if (c >= ' ' && c <= '~' && (!callsign || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')))
+        tty_write_char(ttyp, c);
+    else {
+        int size = snprintf(str, STR_LEN, "<%02x>", c);
+        tty_write(ttyp, str, size);
+    }
+}
+
+void display_packet_do(tty_t *ttyp, tnc_t *tp, struct TNC_data *pkt, enum DISPLAY_FLAGS flags)
 {
     int i;
     int in_addr = 1;
-    int len = tp->data_cnt;
-    uint8_t *data = tp->data;
+    int len = pkt->data_cnt;
+    uint8_t *data = pkt->data;
     int size;
 
 #if PORT_N > 1
@@ -61,44 +72,55 @@ static void display_packet(tty_t *ttyp, tnc_t *tp)
 #endif
 
     for (i = 0; i < len - 2; i++) {
-	    int c;
+	int c;
+        bool show;
 
-        if (i < 7) c = data[i + 7];       // src addr
-        else if (i < 14) c = data[i - 7]; // dst addr
-        else c = data[i];
+        if (i < 7) {
+	    show=flags & DISPLAY_FLAGS_SRC;
+            c = data[i + 7];       // src addr
+        } else if (i < 14) {
+	    show=flags & DISPLAY_FLAGS_DST;
+            c = data[i - 7]; // dst addr
+        } else {
+	    show=flags & DISPLAY_FLAGS_ROUTE;
+            c = data[i];
+        }
 
-	    if (in_addr) {
-	        int d = c >> 1;
+        if (in_addr) {
+            int d = c >> 1;
 
-	        if (i % 7 == 6) { // SSID
+	    if (i % 7 == 6) { // SSID
 
-	            if (i >= 7) in_addr = !(data[i] & 1);  // check address extension bit
+	        if (i >= 7)
+                    in_addr = !(data[i] & 1);  // check address extension bit
 
-		        if (d & 0x0f) { // SSID
+	        if ((d & 0x0f) && show) { // SSID
                     size = snprintf(str, STR_LEN, "-%d", d & 0x0f);
                     tty_write(ttyp, str, size);
                 }
-                if (i >= 14 && (c & 0x80)) tty_write_char(ttyp, '*'); // H bit
-		        if (i == 6) tty_write_char(ttyp, '>');
-                else tty_write_char(ttyp, in_addr ? ',' : ':');
-
-	        } else { // CALLSIGN
-
-		        if (d >= '0' && d <= '9') tty_write_char(ttyp, d);
-		        else if (d >= 'A' && d <= 'Z') tty_write_char(ttyp, d);
-		        else if (d != ' ') {
-                    size = snprintf(str, STR_LEN, "<%02x>", d);
-                    tty_write(ttyp, str, size);
+                if (i >= 14 && (c & 0x80))
+                    tty_write_char(ttyp, '*'); // H bit
+	        if (i == 6) {
+		    if (flags & DISPLAY_FLAGS_DST)
+		        tty_write_char(ttyp, '>');
+                } else if (in_addr) {
+		    if (flags & DISPLAY_FLAGS_ROUTE)
+		        tty_write_char(ttyp, ',');
+                } else {
+                    if (flags & DISPLAY_FLAGS_DATA)
+		        tty_write_char(ttyp, ':');
+                    if (!(flags & DISPLAY_FLAGS_METADATA))
+                        i+=2;
                 }
-
-	        }
-	    } else {
-	        if (c >= ' ' && c <= '~') tty_write_char(ttyp, c);
-	        else {
-                size = snprintf(str, STR_LEN, "<%02x>", c);
-                tty_write(ttyp, str, size);
+	    } else { // CALLSIGN
+                if (d != ' ' && show)
+                    show_ascii(ttyp, d, true);
             }
-	    }
+        } else {
+            if (flags & DISPLAY_FLAGS_DATA) {
+                show_ascii(ttyp, c, false);
+            }
+        }
     }
 #if 1
     tty_write_str(ttyp, "\r\n");
@@ -108,10 +130,15 @@ static void display_packet(tty_t *ttyp, tnc_t *tp)
 #endif
 }
 
+static void display_packet(tty_t *ttyp, tnc_t *tp)
+{
+    display_packet_do(ttyp, tp, &tp->pdata, DISPLAY_FLAGS_ALL);
+}
+
 static void output_packet(tnc_t *tp)
 {
-    int len = tp->data_cnt;
-    uint8_t *data = tp->data;
+    int len = tp->pdata.data_cnt;
+    uint8_t *data = tp->pdata.data;
 
     if (len < MIN_LEN) return;
 
@@ -143,6 +170,7 @@ static void output_packet(tnc_t *tp)
             }
         }
     }
+    gui_display_packet(tp);
 }
 
 #define AX25_FLAG 0x7e
@@ -156,7 +184,7 @@ static void decode_bit(tnc_t *tp, int bit)
         case FLAG:
 	    if (tp->flag == AX25_FLAG) { // found flag
 	        tp->state = DATA;
-	        tp->data_cnt = 0;
+	        tp->pdata.data_cnt = 0;
 	        tp->data_bit_cnt = 0;
 #if 0
 		debug_printf("\r\n$");
@@ -184,9 +212,9 @@ static void decode_bit(tnc_t *tp, int bit)
 	    tp->data_byte |= bit << 7;
 	    tp->data_bit_cnt++;
 	    if (tp->data_bit_cnt >= 8) {
-	        if (tp->data_cnt < DATA_LEN) tp->data[tp->data_cnt++] = tp->data_byte;
+	        if (tp->pdata.data_cnt < DATA_LEN) tp->pdata.data[tp->pdata.data_cnt++] = tp->data_byte;
             else {
-                printf("packet too long > %d\n", tp->data_cnt);
+                printf("packet too long > %d\n", tp->pdata.data_cnt);
                 tp->state = FLAG;
                 break;
             }

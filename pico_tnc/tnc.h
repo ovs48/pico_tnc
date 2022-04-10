@@ -67,6 +67,11 @@ typedef struct {
 
 typedef struct TTY tty_t;
 
+struct TNC_data {
+    uint16_t data_cnt;
+    uint8_t data[DATA_LEN];
+};
+
 typedef struct TNC {
     uint8_t port;
 
@@ -76,8 +81,7 @@ typedef struct TNC {
     uint8_t bit;
 
     // decode_bit
-    uint16_t data_cnt;
-    uint8_t data[DATA_LEN];
+    struct TNC_data pdata;
     uint8_t state;
     uint8_t flag;
     uint8_t data_byte;
@@ -266,6 +270,17 @@ enum SEND_STATE {
 
 void debug_printf(const char *fmt, ...);
 
+enum DISPLAY_FLAGS {
+    DISPLAY_FLAGS_SRC=1,
+    DISPLAY_FLAGS_DST=2,
+    DISPLAY_FLAGS_ROUTE=4,
+    DISPLAY_FLAGS_METADATA=8,
+    DISPLAY_FLAGS_DATA=16,
+    DISPLAY_FLAGS_ALL=255
+};
+
+void display_packet_do(tty_t *ttyp, tnc_t *tp, struct TNC_data *pkt, enum DISPLAY_FLAGS flags);
+
 #ifdef ENABLE_KEYPAD
 extern void keypad_init(void);
 void keypad_poll(void);
@@ -294,6 +309,7 @@ extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 #ifdef ENABLE_GUI
 extern bool cmd_gui(tty_t *ttyp, uint8_t *buf, int len);
 extern void gui_process_char(char c, tty_t *ttyp);
+extern void gui_display_packet(tnc_t *tp);
 #endif
 
 extern const char *gps_getvar(const char *var);
