@@ -1,4 +1,5 @@
 #include <string.h>
+#include <ctype.h>
 #include "pico/stdlib.h"
 #include "tnc.h"
 #include "tty.h"
@@ -9,34 +10,31 @@ static char rows[]={GPIO_ROW1,GPIO_ROW2,GPIO_ROW3,GPIO_ROW4};
 static char cols[]={GPIO_COL1,GPIO_COL2,GPIO_COL3,GPIO_COL4};
 static int active_row=-1;
 static int active_col=-1;
-static char debounce_counter,current_key,last_key;
+static char debounce_counter;
+static char last_char;
+static char *current_key,*last_key,*last_table;
+static enum keypad_mode keypad_mode;
+static uint32_t key_start_time;
 
 static char *sym_table[]=
 {
 	"1.,?!@&`%-:*#",
 	"2ABC",
 	"3DEF",
-	" ",	//Next
+	"~",	//Backspace
 	"4GHI",
 	"5JKL",
 	"6MNO",
-	"\b",	//Backspace
+	" ",	//Space
 	"7PQRS",
 	"8TUV",
 	"9WXYZ",
-	"c",
+	"-",	//Dash
 	"*",
 	"0 ",
 	"#",	//Modifier
-	"d",
+	"\r",	// Return
 };
-
-/*static int* key_table[][4]={
-	{key_1, key_2 ,key_3, key_A},	
-	{key_4,key_5,key_6, key_B},	
-	{key_7,key_8,key_9, key_C},	
-	{key_star ,key_0, key_hash, key_D},	
-};*/
 
 static void keypad_process(char c);
 
@@ -144,95 +142,83 @@ char backspc[5]={' ', '\b', '\b', ' ', '\b'};
 #endif
 }
 
-char keypad_getchar(int key)
+void
+keypad_set_mode(enum keypad_mode mode)
 {
-	static int curr_key=0;
-	static int counter=0;
-	static int modifier=0;	//0 -- Standard, 1 -- Kleinbuchstaben, 2 -- Nur Zahlen
-	if(curr_key==key)
-	{
-		if(key==3 || key ==7 || key==14)
-		{
-			if (key==3)
-			{
-				return(' ');
-			}
-			else if(key==14)
-			{
-				if(modifier==2) 
-					modifier=0;
-				else modifier++;
-				return('\0');
-			}
-			else
-			{
-				backspace();
-				return('\0');
-			}
-		}
-		else 
-		{
-			if(counter>=strlen(sym_table[key])-1)
-				counter = 0;
-			else
-				counter++;
-			if(modifier!=2) backspace();
-			if(modifier==0)
-				return(sym_table[key][counter]);
-			else if(modifier==1)
-			{
-				char ret = sym_table[key][counter];
-				if(ret >= 65 && ret <= 90) ret+=32;
-				return ret;
-			}
-			else
-			{
-				return(sym_table[key][0]);
-			}
-		}
-	}
-	else
-	{
-		if(key==3 || key == 7 || key==14)
-		{
-			if(key==3)
-			{
-				return(' ');
-			}
-			else if(key==14)
-			{
-				if(modifier==2) 
-					modifier=0;
-				else modifier++;
-				return('\0');
-			}
-			else
-			{
-				backspace();
-				return('\0');
-			}
-		}
-		else
-		{
-			curr_key=key;
-			counter=0;
-			if(modifier==0)
-				return(sym_table[key][0]);
-			else if(modifier==1)
-			{
-				char ret = sym_table[key][0];
-				if(ret >= 65 && ret <= 90) ret+=32;
-				return ret;
-			}
-			else
-			{
-				return(sym_table[key][0]);
-			}
-		}
-	}
+	keypad_mode=mode;	
 }
 
 static void
+keypad_process(char c)
+{
+#if 0
+	tty_write_char(&tty[0],c);
+#endif
+#if 0
+	display_write(&c, 1);
+	display_update();
+#endif
+	gui_process_char(c, &display_tty);
+}
+
+static void
+keypad_timeout(void)
+{
+	keypad_process(last_char);
+	last_table=NULL;
+	last_char='\0';
+}
+
+static void
+keypad_process_table(char *table)
+{
+	static int counter=0;
+	static int modifier=0;	//0 -- Standard, 1 -- Kleinbuchstaben, 2 -- Nur Zahlen
+	int next=1;
+
+	if (!table) {
+		// debug_printf("-");
+		return;
+	}
+	// debug_printf("%c",table[0]);
+	if (keypad_mode == KEYPAD_MODE_SIMPLE) {
+		keypad_process(table[0]);
+		return;
+	}
+	if(table[0] == '#') {
+		if(modifier==2) 
+			modifier=0;
+		else
+			modifier++;
+		table=last_table;
+		next=0;
+	}
+	if(last_table!=table)
+	{
+		last_table=table;
+		if (last_char)
+			keypad_process(last_char);
+		counter=0;
+	}
+	if(modifier==2 || strlen(table) == 1) {
+		keypad_process(table[0]);
+		last_char='\0';
+		counter=0;
+	} else {
+		last_char=table[counter];
+		if(modifier==1)
+			last_char=tolower(last_char);
+		keypad_process(last_char);
+		keypad_process('\b');
+		key_start_time=tnc_time();
+		counter += next;
+		if(counter>=strlen(table))
+			counter = 0;
+	}
+}
+
+
+static char *
 keypad_get(void)
 {
 	int key;
@@ -258,7 +244,7 @@ keypad_get(void)
 				active_row = i;
 
 				key=(active_col*4) + active_row;
-				current_key = key+1;
+				current_key=sym_table[key];
 				
 #if 0
 				tty_write_char(&tty[0],'c');
@@ -274,24 +260,12 @@ keypad_get(void)
 #if 0
 		tty_write_char(&tty[0],'d');
 #endif
-		current_key='\0';
+		current_key=NULL;
 		active_col = -1;
 		active_row = -1;
 		enable_rows();
 	}
-}
-
-static void
-keypad_process(char c)
-{
-#if 0
-	tty_write_char(&tty[0],c);
-#endif
-#if 0
-	display_write(&c, 1);
-	display_update();
-#endif
-	gui_process_char(c, &display_tty);
+	return current_key;
 }
 
 void
@@ -301,15 +275,16 @@ keypad_poll(void)
 	if (current_key == last_key) {
 		if (debounce_counter < 10) {
 			debounce_counter++;
-			if (debounce_counter == 10 && current_key != 0) {
-				keypad_process(keypad_getchar(current_key-1));	
-			}
+			if (debounce_counter == 10) 
+				keypad_process_table(current_key);
 		}
 	} else {
 		last_key=current_key;
 		if (debounce_counter > 0)
 			debounce_counter--;
 	}
+	if (last_char && tnc_time() - key_start_time >= 50)
+		keypad_timeout();
 }
 
 #endif

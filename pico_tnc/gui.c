@@ -7,6 +7,8 @@
 #ifdef ENABLE_GUI
 
 static char buffer[64];
+static char msg_buffer[64*10];
+
 struct menu_entry {
 	struct menu_entry *(*func)(struct menu_entry *, tty_t *, char *);
 	void *args;
@@ -17,7 +19,7 @@ struct menus {
 	struct menu_entry *entries;
 };
 
-static int menu_i;
+static int menu_i,cursor;
 struct menu_entry *selection[11];
 static void menu_display(char *name, tty_t *ttyp);
 
@@ -175,24 +177,43 @@ menu_display(char *name, tty_t *ttyp)
 void
 gui_init(void)
 {
+	keypad_set_mode(KEYPAD_MODE_SIMPLE);
 }
 
 void
 gui_process_char(char c, tty_t *ttyp)
 {
+	static int in_menu;
 	struct menu_entry *e;
-	debug_printf("Got '%c'\r\n", c);
+#if 0
+	debug_printf("Got %d (%c)\r\n", c, c);
+#endif
 	if (c == '*') {
+		in_menu=1;
+		keypad_set_mode(KEYPAD_MODE_SIMPLE);
+		tty_write(ttyp, "\ef", 2);
+		cursor=0;
 		menu_display(NULL, ttyp);
+		return;
 	}
-	if (c >= '0' && c <= '9') {
+	if (in_menu && c >= '0' && c <= '9') {
 		e=selection[c == '0'?9:c-'1'];
 		debug_printf("Selection %p\r\n", e);
 		if (e)
 			e->func(e, ttyp, "enter");
+		return;
 	}
-	if (c == '#' && selection[10])
-		e->func(selection[10], ttyp, "enter");
+	if (in_menu && c == '#' && selection[10]) {
+		e=selection[10];
+		e->func(e, ttyp, "enter");
+		return;
+	}
+	if (!cursor) {
+		tty_write(ttyp, "\ee", 2);
+		cursor=1;
+	}
+	tty_write(ttyp, &c, 1);
+	display_update();
 }
 
 void
@@ -200,7 +221,8 @@ gui_display_packet(tnc_t *tp)
 {
 	uint8_t *data = tp->pdata.data;
 	if (param.mon == MON_ALL || (param.mon == MON_ME && ax25_callcmp(&param.mycall, &data[0]))) {
-		tty_write(&display_tty, "\ew", 2);
+		tty_write(&display_tty, "\ef\ew", 2);
+		cursor=0;
 		display_packet_do(&display_tty, tp, &tp->pdata, DISPLAY_FLAGS_SRC|DISPLAY_FLAGS_DATA);
 		tty_write(&display_tty, "\ev", 2);
 	}

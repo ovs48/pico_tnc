@@ -44,10 +44,24 @@ static void ssd1306_clear_pixel(ssd1306_t *p, uint32_t x, uint32_t y) {
     p->buffer[x+p->width*(y>>3)]&=~(0x1<<(y&0x07)); // y>>3==y/8 && y&0x7==y%8
 }
 
+static char ssd1306_get_pixel(ssd1306_t *p, uint32_t x, uint32_t y) {
+    if(x>=p->width || y>=p->height) return 0;
+    return !!(p->buffer[x+p->width*(y>>3)] & (0x1<<(y&0x07)));
+}
+
 void ssd1306_clear_square(ssd1306_t *p, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
     for(uint32_t i=0; i<width; ++i)
         for(uint32_t j=0; j<height; ++j)
             ssd1306_clear_pixel(p, x+i, y+j);
+}
+
+void ssd1306_invert_square(ssd1306_t *p, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+    for(uint32_t i=0; i<width; ++i)
+        for(uint32_t j=0; j<height; ++j)
+	    if (ssd1306_get_pixel(p, x+i, y+j))
+                ssd1306_clear_pixel(p, x+i, y+j);
+            else
+                ssd1306_draw_pixel(p, x+i, y+j);
 }
 
 
@@ -100,7 +114,7 @@ display_init(void)
 	gpio_pull_up(GPIO_OLED_SCL);
 	dc.disp.external_vcc=false;
 	dc.wrap=WRAP_FORWARD;
-	dc.cursor_state=CURSOR_STATE_ON;
+	dc.cursor_state=CURSOR_STATE_OFF;
 	dc.window.w=128;
 	dc.window.h=64;
 	display_init_font(&dc, font_8x5, 1);
@@ -116,6 +130,12 @@ display_init(void)
 }
 
 static void
+display_cursor(struct display_context *dc, bool display)
+{
+	ssd1306_invert_square(&dc->disp, dc->cursor_x, dc->cursor_y, dc->cw, dc->ch);
+}
+
+static void
 display_space(struct display_context *dc)
 {
 	ssd1306_clear_square(&dc->disp, dc->cursor_x, dc->cursor_y, dc->cw, dc->ch);
@@ -126,7 +146,7 @@ display_cursor_clear(struct display_context *dc)
 {
 	if (dc->cursor_state == CURSOR_STATE_DRAWN) {
 		// debug_printf("-%d,%d",dc->cursor_x, dc->cursor_y);
-		display_space(dc);
+		display_cursor(dc, false);
 		dc->cursor_state == CURSOR_STATE_ON;
 	}
 }
@@ -147,6 +167,16 @@ display_process_esc(struct display_context *dc, char c)
 		switch (c) {
 		case 'E':
 			display_clear(dc);
+			break;
+		case 'e':
+			debug_printf("cursor %d ",dc->cursor_state);
+			if (dc->cursor_state == CURSOR_STATE_OFF) 
+				dc->cursor_state = CURSOR_STATE_ON;
+			debug_printf("now %d\r\n",dc->cursor_state);
+			break;
+		case 'f':
+			if (dc->cursor_state == CURSOR_STATE_ON) 
+				dc->cursor_state = CURSOR_STATE_OFF;
 			break;
 		case 'v':
 			dc->wrap=WRAP_FORWARD;
@@ -183,11 +213,13 @@ display_write_do(struct display_context *dc, uint8_t const *data, int len)
 						} 
 						else if (c != 0) {
 							display_space(dc);
+							// debug_printf("+%d,%d",dc->cursor_x, dc->cursor_y);
 							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, c);
 						}  
 						else {
 							// debug_printf("+%d,%d",dc->cursor_x, dc->cursor_y);
-							ssd1306_draw_char_with_font(&dc->disp, dc->cursor_x, dc->cursor_y, dc->scale, dc->font, '_');
+							display_cursor(dc, true);
+							display_update_do(dc);
 							dc->cursor_state = CURSOR_STATE_DRAWN;	
 						}
 						if (c != 0)
@@ -244,7 +276,7 @@ cmd_display(tty_t *ttyp, uint8_t *buf, int len)
 	}
 	tty_write_str(ttyp, "Done.\r\n");
 #else
-	char *str="\eEOV?\b \bS48 This is a string fo a test\r\n";
+	char *str="\eEOV?\b \bS48 This is a string fo a test\b";
 	display_write(str,strlen(str));
 #endif
 	return true;

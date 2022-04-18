@@ -282,8 +282,16 @@ enum DISPLAY_FLAGS {
 void display_packet_do(tty_t *ttyp, tnc_t *tp, struct TNC_data *pkt, enum DISPLAY_FLAGS flags);
 
 #ifdef ENABLE_KEYPAD
+enum keypad_mode {
+	KEYPAD_MODE_TEXT_UPPERCASE,
+	KEYPAD_MODE_TEXT,
+	KEYPAD_MODE_AZ09MINUS,
+	KEYPAD_MODE_SIMPLE,
+};
+
 extern void keypad_init(void);
 void keypad_poll(void);
+void keypad_set_mode(enum keypad_mode mode);
 bool cmd_keypad(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
