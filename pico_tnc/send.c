@@ -30,7 +30,7 @@
 #include "wave_table.h"
 
 static const int pwm_pins[] = {
-#if 0
+#ifdef USE_EXTERNAL_TRANSCEIVER
     GPIO_PWM0, // port 0
 #endif
     GPIO_PWM1,  // port 1
@@ -38,7 +38,7 @@ static const int pwm_pins[] = {
 };
 
 static const int ptt_pins[] = {
-#if 0
+#ifdef USE_EXTERNAL_TRANSCEIVER
     GPIO_PTT0, // port 0
 #endif
     GPIO_PTT1,  // port 1
@@ -46,7 +46,7 @@ static const int ptt_pins[] = {
 };
 
 static const int ptt_active[] = {
-#if 0
+#ifdef USE_EXTERNAL_TRANSCEIVER
     1, 
 #endif
     0,
@@ -348,7 +348,7 @@ void send(void)
                     
             case SP_WAIT_CLR_CH:
                 //printf("(%d) send: SP_WAIT_CLR_CH\n", tnc_time());
-                if (tp->kiss_fullduplex || !tp->cdt || 1) {
+                if (tp->kiss_fullduplex || !tp->cdt || 1) { /* TODO: Implement squelch flag for transceiver */
                     tp->send_state = SP_P_PERSISTENCE;
                     continue;
                 }
