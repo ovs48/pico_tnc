@@ -1,0 +1,10 @@
+TO DO Debugrunde:
+
+Hardware:
+NF - Input für Externen Transceiver
+Schaltung DRA -- EXT
+
+Software:
+Erkennung numerischer und alphabetischer Icons (A..Z, a..Z, 0..9)
+Schaltung DRA -- EXT
+GUI
