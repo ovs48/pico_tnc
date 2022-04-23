@@ -122,6 +122,11 @@ int main()
     tty_write_str(&tty[0], greeting);
     tty_write_str(&tty[1], greeting);
 
+#ifdef ENABLE_GUI
+    gui_init();
+#endif
+
+
     //uint32_t ts = time_us_32();
 
     // set watchdog, timeout 1000 ms

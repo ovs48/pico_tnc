@@ -315,6 +315,7 @@ extern bool cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len);
 #endif
 
 #ifdef ENABLE_GUI
+extern void gui_init(void);
 extern bool cmd_gui(tty_t *ttyp, uint8_t *buf, int len);
 extern void gui_process_char(char c, tty_t *ttyp);
 extern void gui_display_packet(tnc_t *tp);
