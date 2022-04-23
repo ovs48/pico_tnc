@@ -46,7 +46,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //#include "timer.h"
 
 // Channel 0 is GPIO26
+#ifndef USE_EXTERNAL_TRANSCEIVER
 #define ADC_GPIO 27
+#else
+#define ADC_GPIO 26
+#endif
 
 #define BUF_NUM 16
 #define BUF_LEN ((BAUD_RATE * SAMPLING_N * PORT_N + 50) / 100) // ADC samples in 10 ms
@@ -110,7 +114,11 @@ void receive_init(void)
         int adc_pin = ADC_GPIO + i;
 
         adc_gpio_init(adc_pin);
+#ifndef USE_EXTERNAL_TRANSCEIVER
         adc_rr_mask |= 1 << (i+1);
+#else
+        adc_rr_mask |= 1 << i;
+#endif
 
         tnc_t *tp = &tnc[i];
 
@@ -128,7 +136,11 @@ void receive_init(void)
     }
 
     adc_init();
+#ifndef USE_EXTERNAL_TRANSCEIVER
     adc_select_input(1); // start at ADC 0
+#else
+    adc_select_input(0); // start at ADC 0
+#endif
     adc_set_round_robin(adc_rr_mask);
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
