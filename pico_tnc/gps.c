@@ -58,11 +58,24 @@ static int gps_idx = 0;
 static char lat[10]="0000.00N";
 static char lon[10]="00000.00E";
 
+//in - der String aus dem die Zeichenkette gelesen werden soll.
+//cmp - der String der die zu lesende Zeichenkette enthält.
+int cmp_str(const char * in, const char * cmp)
+{
+  int len = strlen(cmp);
+  int notequal=0;
+  for(int i=0; i<len && notequal == 0; i++)
+  {
+    if(in[i] != cmp[i]) notequal = 1;
+  }
+  return notequal;
+}
+
 const char *gps_getvar(const char *name)
 {
-	if (!strcmp(name,"LAT"))
+	if (!cmp_str(name,"LAT"))
 		return lat;
-	if (!strcmp(name,"LON"))
+	if (!cmp_str(name,"LON"))
 		return lon;
 }
 
