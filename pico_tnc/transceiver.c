@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "tnc.h"
 #include "serial.h"
@@ -13,6 +14,13 @@ const char *expected_result;
 int result_pos;
 
 enum {
+	TRANSCEIVER_DEBUG_RX=1,
+	TRANSCEIVER_DEBUG_TX=2,
+	TRANSCEIVER_DEBUG_TIMEOUT=4,
+	TRANSCEIVER_DEBUG_INIT=8
+} transceiver_debug;
+
+enum {
 	TRANSCEIVER_INIT_STATE_BOOT,
 	TRANSCEIVER_INIT_STATE_DMOCONNECT,
 	TRANSCEIVER_INIT_STATE_DMOSETGROUP,
@@ -25,7 +33,8 @@ static void
 transceiver_command(const char *cmd, const char *result, uint32_t timeout)
 {
 	serial_write(cmd,strlen(cmd));
-	usb_write(cmd, strlen(cmd));
+	if (transceiver_debug & TRANSCEIVER_DEBUG_TX)
+		debug_printf("%s",cmd);
 	cmd_start=tnc_time();
 	expected_result=result;
 	transceiver_timeout=timeout;
@@ -34,7 +43,8 @@ transceiver_command(const char *cmd, const char *result, uint32_t timeout)
 static void
 transceiver_command_timeout(void)
 {
-	// debug_printf("timeout\r\n");
+	if (transceiver_debug & TRANSCEIVER_DEBUG_TIMEOUT)
+		debug_printf("timeout %d\r\n",transceiver_init_state);
 	switch (transceiver_init_state) {
 	case TRANSCEIVER_INIT_STATE_BOOT:
 		transceiver_init_state=TRANSCEIVER_INIT_STATE_DMOCONNECT;
@@ -89,7 +99,8 @@ transceiver_input(void)
 {
 	while (uart_is_readable(uart0)) {
 		int ch = uart_getc(uart0);
-		// usb_write_char(ch);
+		if (transceiver_debug & TRANSCEIVER_DEBUG_RX)
+			debug_printf("%c",ch);
 		if (ch == expected_result[result_pos++]) {
 			if (!expected_result[result_pos])
 				transceiver_command_complete();
@@ -108,6 +119,14 @@ transceiver_input(void)
 bool
 cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 {
+	if (buf && len > 6 && !strncasecmp(buf, "debug ",6)) {
+		transceiver_debug=atoi(buf+6);
+		if (transceiver_debug & TRANSCEIVER_DEBUG_INIT) {
+			transceiver_timeout=10;
+			transceiver_init_state=TRANSCEIVER_INIT_STATE_BOOT;
+		}
+		return true;
+	}
 	tty_write_str(ttyp, "Transceiver test ");
 	tty_write(ttyp, buf, len);
 	tty_write_str(ttyp, "\r\n");
