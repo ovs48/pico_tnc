@@ -35,6 +35,13 @@ static enum {
 } in_menu = MENU_PACKET;
 
 static void
+menu_display_no_data(tty_t *ttyp)
+{
+	char *str="No data received yet, press * for menu\r\n";
+	tty_write(&display_tty, str, strlen(str));
+}
+
+static void
 menu_display_entries(struct menu_entry *e, tty_t *ttyp)
 {
 	menu_i=1;
@@ -97,13 +104,14 @@ menu_back(struct menu_entry *e, tty_t *ttyp, char *mode)
 	if (e->args) {
 		if (!mode) {
 			tty_write(ttyp,"# Back\r\n",8);
+			debug_printf("back func %p arg %p\r\n",e->func,e->args);
 			selection[10]=*e;
 		} else
-			menu_display_entries(e, ttyp);
+			menu_display_entries(e->args, ttyp);
 	} else {
 		if (!mode) {
 			tty_write(ttyp,"# Exit\r\n",8);
-			debug_printf("func %p\r\n",e->func);
+			debug_printf("exit func %p\r\n",e->func);
 			selection[10]=*e;
 		} else
 			menu_display_packets(ttyp);
@@ -144,9 +152,10 @@ menu_display_packets(tty_t *ttyp)
 		if (j < 0)
 			j=9;	
 	}
-	if (!flag)
-		tty_write(&display_tty, "\r\n", 2);
 	tty_write(&display_tty, "\ev", 2);
+	if (!flag) {
+		menu_display_no_data(&display_tty);
+	}
 	cursor=0;
 }
 
@@ -233,6 +242,7 @@ void
 gui_init(void)
 {
 	keypad_set_mode(KEYPAD_MODE_SIMPLE);
+	menu_display_no_data(&display_tty);
 }
 
 void
