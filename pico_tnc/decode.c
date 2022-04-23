@@ -270,22 +270,22 @@ void demodulator(tnc_t *tp, int adc)
     int val;
     int bit;
 
-#if 0
-    static int count,sum,suma,min=65535,max=0;
-    if (adc > max) max=adc;
-    if (adc < min) min=adc;
-    suma+=abs(adc-127);
-    sum+=adc;
-    count++;
-    if (count == 65536) {
-	    debug_printf("%d,%d-%d,%d,%d\r\n", adc,min,max,sum/count,suma/count);
-            sum=0;
-	    suma=0;
-	    count=0;
-	    min=65535;
-            max=0;
+    if (receive_debug & RECEIVE_DEBUG_ADC) {
+        static int count,sum,suma,min=65535,max=0;
+        if (adc > max) max=adc;
+        if (adc < min) min=adc;
+        suma+=abs(adc-127);
+        sum+=adc;
+        count++;
+        if (count == 65536) {
+	        debug_printf("%d,%d-%d,%d,%d\r\n", adc,min,max,sum/count,suma/count);
+                sum=0;
+	        suma=0;
+	        count=0;
+	        min=65535;
+                max=0;
+        }
     }
-#endif
     
     //dac_output_voltage(DAC_CHANNEL_1, adc >> 4);
 

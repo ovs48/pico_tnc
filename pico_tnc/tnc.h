@@ -327,5 +327,9 @@ extern enum gps_debug {
 	GPS_DEBUG_REPORT=8,
 } gps_debug;
 
+extern enum receive_debug {
+	RECEIVE_DEBUG_ADC=1,
+} receive_debug;
+
 extern const char *gps_getvar(const char *var);
 extern const char *substitute_vars(const char *str);

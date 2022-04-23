@@ -57,6 +57,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define DEBUG_PIN 22
 
+enum receive_debug receive_debug;
+
 #if ADC_BIT == 8
 static uint8_t buf[BUF_NUM][BUF_LEN];
 #else

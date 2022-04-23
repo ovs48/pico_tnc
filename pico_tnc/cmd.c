@@ -665,6 +665,15 @@ static bool cmd_kiss(tty_t *ttyp, uint8_t *buf, int len)
     return true;
 }
 
+static bool cmd_receive(tty_t *ttyp, uint8_t *buf, int len)
+{
+    if (buf && len > 6 && !strncasecmp(buf, "debug ",6)) {
+        receive_debug=atoi(buf+6);
+        return true;
+    }
+    return false;
+}
+
 static bool cmd_help(tty_t *ttyp, uint8_t *buf, int len)
 {
     //printf("tud_cdc_write_available() = %d\n", tud_cdc_write_available());
@@ -742,6 +751,7 @@ static const cmd_t cmd_list[] = {
     { "CONVERSE", 8, cmd_converse, },
     { "K", 1, cmd_converse, },
     { "KISS", 4, cmd_kiss, },
+    { "RECEIVE", 7, cmd_receive, },
 #ifdef ENABLE_KEYPAD
     { "KEYPAD", 6, cmd_keypad, },
 #endif
