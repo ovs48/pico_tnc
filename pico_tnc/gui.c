@@ -7,7 +7,11 @@
 #ifdef ENABLE_GUI
 
 static char buffer[64];
-static char msg_buffer[64*10];
+static char rxbuffer[4096];
+static struct TNC_DATA *tnc_data[10];
+
+static int rxidx,rxbufferpos;
+
 
 struct menu_entry {
 	struct menu_entry *(*func)(struct menu_entry *, tty_t *, char *);
@@ -20,8 +24,14 @@ struct menus {
 };
 
 static int menu_i,cursor;
-struct menu_entry *selection[11];
+struct menu_entry selection[11];
 static void menu_display(char *name, tty_t *ttyp);
+
+static enum {
+	MENU_OFF,
+	MENU_PACKET,
+	MENU_CHOICE,
+} in_menu = MENU_PACKET;
 
 static void
 menu_display_entries(struct menu_entry *e, tty_t *ttyp)
@@ -33,15 +43,15 @@ menu_display_entries(struct menu_entry *e, tty_t *ttyp)
 		e->func(e, ttyp, NULL);
 		e++;
 	}
-	selection[10]=e;
+	selection[10]=*e;
 }
 
 static void
 menu_idx(struct menu_entry *e, tty_t *ttyp)
 {
 	snprintf(buffer,sizeof(buffer), "%d ",menu_i);
-	if (menu_i >= 1 && menu_i <= 10) {
-		selection[menu_i-1]=e;
+	if (menu_i >= 0 && menu_i <= 9) {
+		selection[menu_i]=*e;
 	}
 	tty_write(ttyp, buffer, strlen(buffer));
 	menu_i++;
@@ -81,19 +91,38 @@ menu_parameter(struct menu_entry *e, tty_t *ttyp, char *mode)
 	return NULL;
 }
 
+static void
+menu_display_packets(tty_t *ttyp)
+{
+	tty_write(ttyp, "\eE\r\n",4);
+}
+
 static struct menu_entry *
 menu_back(struct menu_entry *e, tty_t *ttyp, char *mode)
 {
 	if (e->args) {
 		if (!mode) {
 			tty_write(ttyp,"# Back\r\n",8);
-			selection[10]=e;
+			selection[10]=*e;
 		} else
 			menu_display_entries(e, ttyp);
-	} else if (!mode) {
+	} else {
+		if (!mode) {
 			tty_write(ttyp,"# Exit\r\n",8);
-			selection[10]=e;
-		}
+			selection[10]=*e;
+		} else
+			menu_display_packets(ttyp);
+	}
+}
+
+static struct menu_entry *
+menu_display_packet(struct menu_entry *e, tty_t *ttyp, char *mode)
+{
+	in_menu=MENU_CHOICE;
+	tty_write(ttyp, "\eE",2);
+	display_packet_do(ttyp, NULL, e->args, DISPLAY_FLAGS_SRC|DISPLAY_FLAGS_DST|DISPLAY_FLAGS_ROUTE|DISPLAY_FLAGS_DATA);
+	selection[10].func=menu_back;
+	selection[10].args=NULL;
 }
 
 static struct menu_entry menu_root[] = {
@@ -183,28 +212,27 @@ gui_init(void)
 void
 gui_process_char(char c, tty_t *ttyp)
 {
-	static int in_menu;
 	struct menu_entry *e;
 #if 0
 	debug_printf("Got %d (%c)\r\n", c, c);
 #endif
 	if (c == '*') {
-		in_menu=1;
-		keypad_set_mode(KEYPAD_MODE_SIMPLE);
+		in_menu=MENU_CHOICE;
 		tty_write(ttyp, "\ef", 2);
 		cursor=0;
 		menu_display(NULL, ttyp);
 		return;
 	}
-	if (in_menu && c >= '0' && c <= '9') {
-		e=selection[c == '0'?9:c-'1'];
-		debug_printf("Selection %p\r\n", e);
-		if (e)
+	if (in_menu != MENU_OFF && c >= '0' && c <= '9') {
+		e=&selection[c-'0'];
+		debug_printf("Selection %p\r\n", e->func);
+		if (e->func)
 			e->func(e, ttyp, "enter");
 		return;
 	}
-	if (in_menu && c == '#' && selection[10]) {
-		e=selection[10];
+	if (in_menu == MENU_CHOICE && c == '#' && selection[10].func) {
+		e=&selection[10];
+		debug_printf("Back %p\r\n", e->func);
 		e->func(e, ttyp, "enter");
 		return;
 	}
@@ -220,8 +248,22 @@ void
 gui_display_packet(tnc_t *tp)
 {
 	uint8_t *data = tp->pdata.data;
+	uint16_t cnt = tp->pdata.data_cnt+sizeof(tp->pdata.data_cnt);
 	if (param.mon == MON_ALL || (param.mon == MON_ME && ax25_callcmp(&param.mycall, &data[0]))) {
-		tty_write(&display_tty, "\ef\ew", 2);
+		char c[]={'\e','f','\e','w','0',' '};
+		uint8_t *dest;
+		rxidx++;
+		if (rxidx > 9)
+			rxidx=0;
+		if (rxbufferpos+cnt > sizeof(rxbuffer))
+			rxbufferpos=0;
+		dest=rxbuffer+rxbufferpos;
+		memcpy(dest, &tp->pdata, cnt);
+		rxbufferpos+=cnt;
+		selection[rxidx].func=menu_display_packet;
+		selection[rxidx].args=dest;
+		c[4]='0'+rxidx;
+		tty_write(&display_tty, c, sizeof(c));
 		cursor=0;
 		display_packet_do(&display_tty, tp, &tp->pdata, DISPLAY_FLAGS_SRC|DISPLAY_FLAGS_DATA);
 		tty_write(&display_tty, "\ev", 2);
