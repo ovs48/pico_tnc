@@ -51,7 +51,11 @@ transceiver_command_complete(void)
 	switch (transceiver_init_state) {
 	case TRANSCEIVER_INIT_STATE_DMOCONNECT:
 		transceiver_init_state=TRANSCEIVER_INIT_STATE_DMOSETGROUP;
-		transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		#ifdef USE_EXTERNAL_TRANSCEIVER
+			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		#else
+			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		#endif
 		break;
 	case TRANSCEIVER_INIT_STATE_DMOSETGROUP:
 		transceiver_init_state=TRANSCEIVER_INIT_STATE_DMOSETVOLUME;
@@ -79,6 +83,13 @@ transceiver_init(void)
 	gpio_init(GPIO_PTT1);
 	gpio_set_dir(GPIO_PTT1, true); // output
 	gpio_put(GPIO_PTT1, 1);
+#endif
+
+#ifdef USE_EXTERNAL_TRANSCEIVER
+	#define GPIO_PTT1 GPIO_PTT0	//Pinzuweisung; DRA PTT ist jetzt auch ext TRX PTT
+	gpio_put(GPIO_PD, 0);
+#else
+	//foo
 #endif
 }
 
