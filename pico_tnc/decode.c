@@ -67,8 +67,10 @@ void display_packet_do(tty_t *ttyp, tnc_t *tp, struct TNC_data *pkt, enum DISPLA
     int size;
 
 #if PORT_N > 1
-    size = snprintf(str, STR_LEN, "(%d) %d:%d:", tnc_time(), tp->port, tp->pkt_cnt);
-    tty_write(ttyp, str, size);
+    if (tp) {
+        size = snprintf(str, STR_LEN, "(%d) %d:%d:", tnc_time(), tp->port, tp->pkt_cnt);
+        tty_write(ttyp, str, size);
+    }
 #endif
 
     for (i = 0; i < len - 2; i++) {
