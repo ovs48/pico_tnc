@@ -505,6 +505,9 @@ static bool cmd_gps(tty_t *ttyp, uint8_t *buf, int len)
 		tty_write_str(ttyp, gps_str[i]);
 		tty_write_str(ttyp, "\r\n");
 	}
+    } else if (buf && len > 6 && !strncasecmp(buf, "debug ",6)) {
+        gps_debug=atoi(buf+6);
+        return true;
     } else if (is_cmd(buf, len)) {
         for (int i = 0; i < 4; i++) {
             uint8_t const *str = gps_str[i];

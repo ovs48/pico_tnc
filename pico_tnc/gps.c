@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static uint8_t gps_buf[GPS_LEN + 1];
 static int gps_idx = 0;
+enum gps_debug gps_debug;
 
 #define DOLLAR '$'
 #define BS '\b'
@@ -82,10 +83,14 @@ const char *gps_getvar(const char *name)
 static void gps_send(uint8_t *buf, int len)
 {
     static uint32_t gps_timer = 0;
+    if (gps_debug & GPS_DEBUG_RAW)
+	debug_printf("%s\r\n",buf);
     if (!strncmp("$GPRMC", buf, 6)) {
 	char *str[32],*b=buf,*s;
 	int idx=0;
 	char *saveptr;
+	if (gps_debug & GPS_DEBUG_GPRMC)
+		debug_printf("%s\r\n",buf);
 	while (idx < 31 && (s=strtok_r(b,",",&saveptr)) != NULL) {
 		b=NULL;
 		str[idx++]=s;
@@ -96,6 +101,9 @@ static void gps_send(uint8_t *buf, int len)
 		strncpy(lat, str[3], 8);
 		strcpy(str[5]+8,str[6]);
 		strncpy(lon, str[5], 9);
+		if (gps_debug & GPS_DEBUG_LATLON) {
+			debug_printf("LAT=%s LON=%s\r\n",lat, lon);
+		}
 	}
     }
     if (tnc_time() - gps_timer < GPS_INTERVAL) return;
@@ -104,6 +112,8 @@ static void gps_send(uint8_t *buf, int len)
         || (param.gps == GPGLL && !strncmp("$GPGLL", buf, 6))
         || (param.gps == GPRMC && !strncmp("$GPRMC", buf, 6))) {
 
+	if (gps_debug & GPS_DEBUG_REPORT)
+	    debug_printf("%s\r\n",buf);
         send_unproto(&tnc[GPS_PORT], buf, len);
         gps_timer = tnc_time();
     }

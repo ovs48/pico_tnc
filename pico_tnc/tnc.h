@@ -320,5 +320,12 @@ extern void gui_process_char(char c, tty_t *ttyp);
 extern void gui_display_packet(tnc_t *tp);
 #endif
 
+extern enum gps_debug {
+	GPS_DEBUG_RAW=1,
+	GPS_DEBUG_GPRMC=2,
+	GPS_DEBUG_LATLON=4,
+	GPS_DEBUG_REPORT=8,
+} gps_debug;
+
 extern const char *gps_getvar(const char *var);
 extern const char *substitute_vars(const char *str);
