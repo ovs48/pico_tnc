@@ -51,6 +51,16 @@ substitute_vars(const char *str)
 		if (*str == '$') {
 			str=substitute_var(str+1, buffer+p, max-p-1);
 			p+=strlen(buffer+p);
+		} else if (*str == '%') {
+			if (str[1] != '%') {
+				str=substitute_var(str+1, buffer+p, max-p-1);
+				p+=strlen(buffer+p);
+				if (*str == '%')
+					str++;
+			} else {
+				buffer[p++]=*str;
+				str+=2;
+			}
 		} else
 			buffer[p++]=*str++;
 	}
