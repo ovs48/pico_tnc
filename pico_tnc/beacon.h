@@ -27,5 +27,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-void beacon(void);
+void beacon(bool force);
 void beacon_reset(void);

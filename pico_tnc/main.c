@@ -169,7 +169,7 @@ int main()
 #endif
 
         // send beacon
-        beacon();
+        beacon(false);
 
         // calibrate off
         calibrate();

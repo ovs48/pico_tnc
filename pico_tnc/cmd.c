@@ -347,6 +347,11 @@ static bool cmd_beacon(tty_t *ttyp, uint8_t *buf, int len)
             return true;
         }
 
+        if (!strncasecmp(buf, "NOW", 3)) {
+	    beacon(true);
+            return true;
+        }
+
         while (toupper(buf[i]) == *s) {
             i++;
             s++;

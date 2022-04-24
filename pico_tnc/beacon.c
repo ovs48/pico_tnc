@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "tnc.h"
 #include "unproto.h"
+#include "beacon.h"
 
 static uint32_t beacon_time = 0;
 
@@ -40,12 +41,14 @@ void beacon_reset(void)
     beacon_time = tnc_time();
 }
 
-void beacon(void)
+void beacon(bool force)
 {
     const char *text;
-    if (!param.beacon) return;
+    if (!force) {
+        if (!param.beacon) return;
 
-    if (tnc_time() - beacon_time < param.beacon * 60 * 100) return; // convert minutes to 10 ms
+        if (tnc_time() - beacon_time < param.beacon * 60 * 100) return; // convert minutes to 10 ms
+    }
   
     text=substitute_vars(param.btext); 
     debug_printf("beacon %s\r\n",text);
