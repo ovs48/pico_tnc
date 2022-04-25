@@ -17,7 +17,9 @@ enum {
 	TRANSCEIVER_DEBUG_RX=1,
 	TRANSCEIVER_DEBUG_TX=2,
 	TRANSCEIVER_DEBUG_TIMEOUT=4,
-	TRANSCEIVER_DEBUG_INIT=8
+	TRANSCEIVER_DEBUG_INIT=8,
+	TRANSCEIVER_DEBUG_POWER=16,
+	TRANSCEIVER_DEBUG_POWER_ENABLE=32
 } transceiver_debug;
 
 enum {
@@ -93,6 +95,11 @@ transceiver_init(void)
 	gpio_init(GPIO_PTT1);
 	gpio_set_dir(GPIO_PTT1, true); // output
 	gpio_put(GPIO_PTT1, 1);
+	gpio_init(GPIO_LED);
+	gpio_set_dir(GPIO_LED, false); // input
+#if 0
+	gpio_put(GPIO_LED, 0);
+#endif
 #endif
 
 #ifdef USE_EXTERNAL_TRANSCEIVER
@@ -136,6 +143,8 @@ cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 			transceiver_timeout=10;
 			transceiver_init_state=TRANSCEIVER_INIT_STATE_BOOT;
 		}
+		gpio_set_dir(GPIO_LED, !!(transceiver_debug & TRANSCEIVER_DEBUG_POWER_ENABLE)); 
+		gpio_put(GPIO_LED, !!(transceiver_debug & TRANSCEIVER_DEBUG_POWER));
 		return true;
 	}
 	tty_write_str(ttyp, "Transceiver test ");
