@@ -149,9 +149,48 @@ transceiver_input(void)
 }
 
 
+bool switch_state(int st, tty_t* ttyp)
+{
+	char buffer[50];
+	/*sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);
+	tty_write_str(ttyp, buffer);*/
+
+    if(st==0)  //Intern auf Extern
+    {
+        gpio_put(GPIO_PD, 0);
+        if(trx==1) trx--;
+        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		/*sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);
+		tty_write_str(ttyp, buffer);*/
+    }
+    else if (st==1)    //Extern auf intern
+    {
+        gpio_put(GPIO_PD, 1);
+        if(trx==0) trx++;
+        /*transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);*/
+		tty_write_str(ttyp, buffer);
+    }
+	else
+		return false;
+
+    //New init.
+    //stdio_init_all();   //Sollte GPIO initialisieren
+	if(trx==st)
+	{
+		send_init();
+		receive_init();
+		transceiver_init();
+		return true;
+	}
+	else return false;
+}
+
+
 bool
 cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 {
+	int st = -1;
 	if (buf && len > 6 && !strncasecmp(buf, "debug ",6)) {
 		transceiver_debug=atoi(buf+6);
 		if (transceiver_debug & TRANSCEIVER_DEBUG_INIT) {
@@ -162,8 +201,36 @@ cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 		gpio_put(GPIO_LED, !!(transceiver_debug & TRANSCEIVER_DEBUG_POWER));
 		return true;
 	}
-	tty_write_str(ttyp, "Transceiver test ");
-	tty_write(ttyp, buf, len);
+	else if (buf && len > 6 && !strncasecmp(buf, "external",8))
+	{
+		st=1;
+	}
+	else if (buf && len > 6 && !strncasecmp(buf, "internal",8))
+	{
+		st=0;
+	}
+	if(st>=0)
+	{
+		if(!switch_state(st, ttyp))
+		{
+			return false;
+		}
+		else
+		{
+			if(trx!=st)
+			{
+				tty_write_str(ttyp, "TRX VAR not set properly");
+				return false;
+			}
+		}
+		return true;
+	}
+	/*tty_write_str(ttyp, "Transceiver test ");
+	tty_write(ttyp, buf, len);*/
+	if(trx==0)
+        tty_write_str(ttyp, "INT TRX");
+    else
+        tty_write_str(ttyp, "EXT TRX");
 	tty_write_str(ttyp, "\r\n");
 	if (len == 1 && buf[0] == '1') {
 		transceiver_command("AT+DMOCONNECT\r\n","",50);
@@ -187,24 +254,3 @@ cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 }
 
 #endif
-
-void switch_state()
-{
-    if(trx==0)  //Intern auf Extern
-    {
-        gpio_put(GPIO_PD, 0);
-        trx=1;
-        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
-    }
-    else    //Extern auf intern
-    {
-        gpio_put(GPIO_PD, 1);
-        trx=0;
-        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
-    }
-
-    //New init.
-    //stdio_init_all();   //Sollte GPIO initialisieren
-    send_init();        //Sollte TX initialisieren
-    receive_init();     //Sollte RX initialisieren
-}
