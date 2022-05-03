@@ -5,8 +5,17 @@
 #include "serial.h"
 #include "tty.h"
 #include "usb_output.h"
+#include "receive.h"
+#include "send.h"
+
+#ifdef USE_EXTERNAL_TRANSCEIVER
+int trx = 1;
+#else
+int trx = 0;
+#endif
 
 #ifdef ENABLE_TRANSCEIVER
+
 
 uint32_t cmd_start;
 uint32_t transceiver_timeout=10;
@@ -63,11 +72,17 @@ transceiver_command_complete(void)
 	switch (transceiver_init_state) {
 	case TRANSCEIVER_INIT_STATE_DMOCONNECT:
 		transceiver_init_state=TRANSCEIVER_INIT_STATE_DMOSETGROUP;
-		#ifdef USE_EXTERNAL_TRANSCEIVER
+		//#ifdef USE_EXTERNAL_TRANSCEIVER
+		if(trx!=0)
+		{			
 			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
-		#else
+		}
+		//#else
+		else
+		{
 			transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
-		#endif
+		}
+		//#endif
 		break;
 	case TRANSCEIVER_INIT_STATE_DMOSETGROUP:
 		transceiver_init_state=TRANSCEIVER_INIT_STATE_DMOSETVOLUME;
@@ -103,7 +118,7 @@ transceiver_init(void)
 #endif
 
 #ifdef USE_EXTERNAL_TRANSCEIVER
-	#define GPIO_PTT1 GPIO_PTT0	//Pinzuweisung; DRA PTT ist jetzt auch ext TRX PTT
+	//#define GPIO_PTT1 GPIO_PTT0	//Pinzuweisung; DRA PTT ist jetzt auch ext TRX PTT
 	gpio_put(GPIO_PD, 0);
 #else
 	//foo
@@ -172,3 +187,24 @@ cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 }
 
 #endif
+
+void switch_state()
+{
+    if(trx==0)  //Intern auf Extern
+    {
+        gpio_put(GPIO_PD, 0);
+        trx=1;
+        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
+    }
+    else    //Extern auf intern
+    {
+        gpio_put(GPIO_PD, 1);
+        trx=0;
+        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
+    }
+
+    //New init.
+    //stdio_init_all();   //Sollte GPIO initialisieren
+    send_init();        //Sollte TX initialisieren
+    receive_init();     //Sollte RX initialisieren
+}
