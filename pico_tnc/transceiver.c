@@ -8,7 +8,7 @@
 #include "receive.h"
 #include "send.h"
 
-#ifdef USE_EXTERNAL_TRANSCEIVER
+#ifndef USE_EXTERNAL_TRANSCEIVER
 int trx = 1;
 #else
 int trx = 0;
@@ -119,7 +119,7 @@ transceiver_init(void)
 
 #ifdef USE_EXTERNAL_TRANSCEIVER
 	//#define GPIO_PTT1 GPIO_PTT0	//Pinzuweisung; DRA PTT ist jetzt auch ext TRX PTT
-	gpio_put(GPIO_PD, 0);
+	//gpio_put(GPIO_PD, 0);
 #else
 	//foo
 #endif
@@ -151,39 +151,39 @@ transceiver_input(void)
 
 bool switch_state(int st, tty_t* ttyp)
 {
+	static int switches=0;
+	if(switches>=3)
+	{
+		tty_write_str(ttyp, "Limit Reached");
+		return false;
+	}
 	char buffer[50];
 	/*sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);
 	tty_write_str(ttyp, buffer);*/
 
-    if(st==0)  //Intern auf Extern
+    if(st==0 && trx==1)  //Intern auf Extern
     {
-        gpio_put(GPIO_PD, 0);
-        if(trx==1) trx--;
+        //gpio_put(GPIO_PD, 0);
+        trx--;
         transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,8,0000\r\n","+DMOSETGROUP:0\r\n",10);
 		/*sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);
 		tty_write_str(ttyp, buffer);*/
+		switches++;
     }
-    else if (st==1)    //Extern auf intern
+    else if (st==1 && trx==0)    //Extern auf intern
     {
-        gpio_put(GPIO_PD, 1);
-        if(trx==0) trx++;
-        /*transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
-		sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);*/
-		tty_write_str(ttyp, buffer);
+        //gpio_put(GPIO_PD, 1);
+        trx++;
+        transceiver_command("AT+DMOSETGROUP=1,144.8000,144.8000,0000,0,0000\r\n","+DMOSETGROUP:0\r\n",10);
+		/*sprintf(buffer, "TRX is now %d\r\nState (st) is now %d\r\n", trx, st);
+		tty_write_str(ttyp, buffer);*/
+		switches++;
     }
 	else
 		return false;
 
-    //New init.
-    //stdio_init_all();   //Sollte GPIO initialisieren
-	if(trx==st)
-	{
-		send_init();
-		receive_init();
-		transceiver_init();
-		return true;
-	}
-	else return false;
+	//transceiver_init();
+	return true;
 }
 
 
@@ -223,7 +223,9 @@ cmd_transceiver(tty_t *ttyp, uint8_t *buf, int len)
 				return false;
 			}
 		}
-		return true;
+		send_init();
+		receive_init();
+		//return true;
 	}
 	/*tty_write_str(ttyp, "Transceiver test ");
 	tty_write(ttyp, buf, len);*/
