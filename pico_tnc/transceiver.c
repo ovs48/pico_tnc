@@ -8,7 +8,7 @@
 #include "receive.h"
 #include "send.h"
 
-#ifndef USE_EXTERNAL_TRANSCEIVER
+#ifdef USE_EXTERNAL_TRANSCEIVER
 int trx = 1;
 #else
 int trx = 0;
