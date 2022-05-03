@@ -208,6 +208,7 @@ static struct menu_entry menu_transmit[] = {
 	{menu_title, "Transmit"},
 	{menu_parameter, "TxDelay"},
 	{menu_parameter, "Unproto"},
+	{menu_parameter, "transceiver"},
 	{menu_back, menu_settings},
 	{NULL, NULL},
 };
