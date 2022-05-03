@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define DEBUG_PIN 22
 
+extern int trx;
 enum receive_debug receive_debug;
 
 #if ADC_BIT == 8
@@ -111,16 +112,29 @@ void receive_init(void)
     // Init GPIO for analogue use: hi-Z, no pulls, disable digital input buffer.
     uint8_t adc_rr_mask = 0;    
     for (int i = 0; i < PORT_N; i++) {
-
         // initialize GPIO pin for ADC
-        int adc_pin = ADC_GPIO + i;
+        int adc_pin;
+        if(trx==0)
+        {
+            adc_pin = 27 + i;
+        }
+        else
+        {
+            adc_pin = 26 + i;
+        }
 
         adc_gpio_init(adc_pin);
-#ifndef USE_EXTERNAL_TRANSCEIVER
-        adc_rr_mask |= 1 << (i+1);
-#else
-        adc_rr_mask |= 1 << i;
-#endif
+//#ifndef USE_EXTERNAL_TRANSCEIVER
+        if(trx==0)
+        {
+            adc_rr_mask |= 1 << (i+1);
+        }
+//#else
+        else
+        {
+            adc_rr_mask |= 1 << i;
+        }
+//#endif
 
         tnc_t *tp = &tnc[i];
 
@@ -138,11 +152,17 @@ void receive_init(void)
     }
 
     adc_init();
-#ifndef USE_EXTERNAL_TRANSCEIVER
-    adc_select_input(1); // start at ADC 0
-#else
-    adc_select_input(0); // start at ADC 0
-#endif
+//#ifndef USE_EXTERNAL_TRANSCEIVER
+    if(trx==0)
+    {
+        adc_select_input(1); // start at ADC 0
+//#else
+    }
+    else
+    {
+        adc_select_input(0); // start at ADC 0
+    }
+//#endif
     adc_set_round_robin(adc_rr_mask);
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
