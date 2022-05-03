@@ -42,6 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "flash.h"
 #include "receive.h"
 #include "beacon.h"
+#include "transceiverstate.h"
+
+extern int trx;
 
 typedef struct CMD {
     uint8_t *name;
@@ -71,6 +74,7 @@ static char const help_str[] =
     "TRace (tr xmit or tr rcv) - For debugging only\r\n"
     "TXDELAY (txdelay n 0<n<201 n is number of delay flags to send)\r\n"
     "CALIBRATE (Calibrate Mode - Testing Only)\r\n"
+    "SWITCH (Switches Transceiver)\r\n"
 #ifdef ENABLE_KEYPAD
     "KEYPAD (Keypad test)\r\n"
 #endif
@@ -691,6 +695,16 @@ static bool cmd_help(tty_t *ttyp, uint8_t *buf, int len)
     return true;
 }
 
+static bool cmd_switch(tty_t *ttyp, uint8_t *buf, int len)
+{
+    switch_state();
+    if(trx==0)
+        tty_write_str(ttyp, "INT TRX\r\n");
+    else
+        tty_write_str(ttyp, "EXT TRX\r\n");
+    return true;
+}
+
 static bool cmd_disp(tty_t *ttyp, uint8_t *buf, int len)
 {
     uint8_t temp[10]; // 6 + '-' + 2 + '\0'
@@ -730,6 +744,10 @@ static bool cmd_disp(tty_t *ttyp, uint8_t *buf, int len)
     // btext
     cmd_btext(ttyp, NULL, 0);
 
+    if(trx==0)
+        tty_write_str(ttyp, "Internal Transceiver");
+    else
+        tty_write_str(ttyp, "External Transceiver");
     //usb_write("\r\n", 2);
     
     return true;
@@ -757,6 +775,7 @@ static const cmd_t cmd_list[] = {
     { "K", 1, cmd_converse, },
     { "KISS", 4, cmd_kiss, },
     { "RECEIVE", 7, cmd_receive, },
+    { "SWITCH", 6, cmd_switch, },
 #ifdef ENABLE_KEYPAD
     { "KEYPAD", 6, cmd_keypad, },
 #endif
