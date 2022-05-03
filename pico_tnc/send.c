@@ -28,29 +28,41 @@
 
 //#include "wave_table.h"
 #include "wave_table.h"
-
-static const int pwm_pins[] = {
-#ifdef USE_EXTERNAL_TRANSCEIVER
+extern int trx;
+static const int pwm_pins_int[] = {
+/*#ifdef USE_EXTERNAL_TRANSCEIVER
     GPIO_PWM0, // port 0
-#endif
+#endif*/
     GPIO_PWM1,  // port 1
     GPIO_PWM2,  // port 2
 };
 
-static const int ptt_pins[] = {
-#ifdef USE_EXTERNAL_TRANSCEIVER
+static const int pwm_pins_ext[] = {
+    GPIO_PWM0, // port 0
+};
+
+static const int ptt_pins_int[] = {
+/*#ifdef USE_EXTERNAL_TRANSCEIVER
     GPIO_PTT0, // port 0
-#endif
+#endif*/
     GPIO_PTT1,  // port 1
     GPIO_PTT2,  // port 2
 };
 
-static const int ptt_active[] = {
-#ifdef USE_EXTERNAL_TRANSCEIVER
+static const int ptt_pins_ext[] = {
+    GPIO_PTT0, // port 0
+};
+
+static const int ptt_active_int[] = {
+/*#ifdef USE_EXTERNAL_TRANSCEIVER
     1, 
-#endif
+#endif*/
     0,
     1,
+};
+
+static const int ptt_active_ext[] = {
+    1, 
 };
 
 #define LED_PIN PICO_DEFAULT_LED_PIN
@@ -237,8 +249,16 @@ void send_init(void)
         queue_init(&tp->dac_queue, sizeof(uint32_t *), DAC_QUEUE_LEN);
 
         // PTT pins
-        tp->ptt_pin = ptt_pins[i];
-	tp->ptt_active = ptt_active[i];
+        if(trx==0)
+        {
+            tp->ptt_pin = ptt_pins_int[i];
+            tp->ptt_active = ptt_active_int[i];
+        }
+        else
+        {
+            tp->ptt_pin = ptt_pins_ext[i];
+            tp->ptt_active = ptt_active_ext[i];
+        }
         gpio_init(tp->ptt_pin);
         gpio_set_dir(tp->ptt_pin, true); // output
         gpio_put(tp->ptt_pin, !tp->ptt_active);
@@ -261,7 +281,14 @@ void send_init(void)
         // PIO
         // find free state machine
         uint sm = pio_claim_unused_sm(pio, true);
-        pio_dac_program_init(pio, sm, offset, pwm_pins[i], PIO_DAC_FS);
+        if(trx==0)
+        {
+            pio_dac_program_init(pio, sm, offset, pwm_pins_int[i], PIO_DAC_FS);
+        }
+        else
+        {
+            pio_dac_program_init(pio, sm, offset, pwm_pins_ext[i], PIO_DAC_FS);
+        }
 
         // DMA
         tp->ctrl_chan = dma_claim_unused_channel(true);
