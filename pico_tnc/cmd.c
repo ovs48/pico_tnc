@@ -74,6 +74,7 @@ static char const help_str[] =
     "TXDELAY (txdelay n 0<n<201 n is number of delay flags to send)\r\n"
     "CALIBRATE (Calibrate Mode - Testing Only)\r\n"
     "Transceiver internal / external (Switches Transceiver)\r\n"
+    "CLEAR (clears screen)\r\n"
 #ifdef ENABLE_KEYPAD
     "KEYPAD (Keypad test)\r\n"
 #endif
@@ -704,6 +705,13 @@ static bool cmd_help(tty_t *ttyp, uint8_t *buf, int len)
     return true;
 }*/
 
+
+static bool cmd_clear(tty_t *ttyp, uint8_t *buf, int len)
+{
+    tty_write_str(ttyp, "\033c");
+    return true;
+}
+
 static bool cmd_disp(tty_t *ttyp, uint8_t *buf, int len)
 {
     uint8_t temp[10]; // 6 + '-' + 2 + '\0'
@@ -775,6 +783,7 @@ static const cmd_t cmd_list[] = {
     { "KISS", 4, cmd_kiss, },
     { "RECEIVE", 7, cmd_receive, },
     /*{ "SWITCH", 6, cmd_switch, },*/
+    { "CLEAR", 5, cmd_clear, },
 #ifdef ENABLE_KEYPAD
     { "KEYPAD", 6, cmd_keypad, },
 #endif
