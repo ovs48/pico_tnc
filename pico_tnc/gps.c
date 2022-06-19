@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "usb_input.h"
 #include "serial.h"
 #include "unproto.h"
+#include "tty.h"
 
 #define GPS_LEN 127
 #define GPS_INTERVAL (3 * 60 * 100) // 3 min.
@@ -72,12 +73,53 @@ int cmp_str(const char * in, const char * cmp)
   return notequal;
 }
 
+void gps_info(char *str)
+{
+  static int status=1;
+  int chk=0;
+  int ost=status;
+  int i;
+  for(i=0; i<strlen(str); i++)
+  {
+    if(str[i]>=48 && str[i]<=57)
+    {
+      //display_write(&str[i], 1);
+      //tty_write(&display_tty, &str[i], 1);
+      chk+=(str[i]-48);
+    }
+  }
+  char dsp[10]="";
+  if(chk!=0 && status==0)
+  {
+    status++;
+    strcpy(dsp, "GPS OK\r\n");
+    //tty_write(&display_tty, "GPS OK", strlen("GPS OK"));
+  }
+  if(chk==0 && status==1)
+  {
+    status--;
+    strcpy(dsp, "GPS NC\r\n");
+    //tty_write(&display_tty, "GPS NC", strlen("GPS NC"));
+  }
+  if(ost!=status)
+  {
+    display_write(dsp, strlen(dsp));
+	  display_update();
+  }
+}
+
 const char *gps_getvar(const char *name)
 {
 	if (!cmp_str(name,"LAT"))
+  {
+    //gps_info(lat);
 		return lat;
+  }
 	if (!cmp_str(name,"LON"))
+  {
+    //gps_info(lon);
 		return lon;
+  }
 }
 
 static void gps_send(uint8_t *buf, int len)
@@ -134,5 +176,6 @@ void gps_input(int ch)
 	gps_buf[gps_idx-1]='\0';
         gps_send(gps_buf, gps_idx);
         gps_idx = 0;
+        gps_info(lat);
     }
 }
