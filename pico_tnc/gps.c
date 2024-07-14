@@ -226,11 +226,19 @@ static void gps_compress()
     X -> Compressed lon, 4 bytes
     S -> Symbol Code (for example > with T='/' for car), 1 byte
 
-    These bytes are not used for now. So after your symbol code you have to insert a SPACE followed by two filler characters.
+    The following bytes are not used for now. So after your symbol code you have to insert a SPACE followed by two filler characters.
     I -> Additional compressed info, like speed, course OR range OR alt. 2 bytes
     C -> Compression type, 1 byte
 
     Overall length: 13 bytes max
+
+    For example, =/XXXXYYYY> --Lukas S48
+    Corresponds to a compressed APRS packet with
+      - Symbol Table "/" to link to regular symbols
+      - Compressed Position XXXXYYYY
+      - Symbol Code ">", which in combination with table "/" corresponds to a car
+      - SPACE Dash Dash as seperator and filler
+      - Lukas S48 as comment
   */
   //Compression type byte
   char origin = (char)0b00100110;
