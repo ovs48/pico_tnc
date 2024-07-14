@@ -2,7 +2,7 @@
 
 PICO TNC is the Terminal Node Controler for Amateur Packet Radio powered by Raspberry Pi Pico.
 
-This TNC has same functionality as WB8WGA's PIC TNC.
+This TNC has same functionality as WB8WGA's PIC TNC with slight improvements.
 
 ## PIC TNC features
 
@@ -10,7 +10,7 @@ This TNC has same functionality as WB8WGA's PIC TNC.
 - Digipeat UI packet up to 1024 byte length
 - Send beacon packet
 - Support converse mode
-- Support GPS tracker feature
+- Support GPS tracker feature, position can be sent either in compressed or uncompressed format
 - Support both USB serial and UART serial interface
 
 ## Additional features
@@ -65,3 +65,11 @@ make -j4
 ![bell202-wave](bell202-wave.png)
 ![command line](command.png)
 [![schemantic](schematic.jpg)](schematic.png)
+
+### Custom Commands and variables
+
+Some commands and variables have been added to improve functionality of the standalone TNC even more. These include:
+
+- TRANSCEIVER INTERNAL / EXTERNAL to switch between internal or external TRX
+- $COMP for Compressed Position packet instead of $LAT and $LON
+- BEACON NOW to transmit the beacon instantly
