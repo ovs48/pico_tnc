@@ -28,6 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <math.h>
 #include "pico/stdlib.h"
 
 #include "tnc.h"
@@ -59,6 +61,9 @@ enum gps_debug gps_debug;
 
 static char lat[10]="0000.00N";
 static char lon[10]="00000.00E";
+// static char lat[10]="5033.43N";
+// static char lon[10]="01257.46E";
+static char compressedPos[13] = "";
 
 //in - der String aus dem die Zeichenkette gelesen werden soll.
 //cmp - der String der die zu lesende Zeichenkette enthält.
@@ -108,6 +113,7 @@ void gps_info(char *str)
   }
 }
 
+static void gps_compress();
 const char *gps_getvar(const char *name)
 {
 	if (!cmp_str(name,"LAT"))
@@ -120,6 +126,145 @@ const char *gps_getvar(const char *name)
     //gps_info(lon);
 		return lon;
   }
+  if (!cmp_str(name,"COMP"))
+  {
+    //gps_info(lon);
+    gps_compress();
+    debug_printf("Compressed Data: %s", compressedPos);
+		return compressedPos;
+  }
+}
+
+float getDecimal(bool is_lon)
+{
+  unsigned short coeff = 1;
+
+  float raw_data = 0.0;
+  if(is_lon)
+  {
+      raw_data = atof(lon);
+      if(lon[strlen(lon)-1] == 'W') coeff = -1;
+      debug_printf("%c", lon[strlen(lon)-1]);
+  } 
+  else 
+  {
+    raw_data = atof(lat);
+    if(lat[strlen(lat)-1] == 'S') coeff = -1;
+      debug_printf("%c", lat[strlen(lat)-1]);
+  }
+
+  int raw_deg = (int)floor(raw_data / 100);
+  int raw_min = (int)floor(raw_data - (raw_deg * 100));
+  float raw_secs = (float)(raw_data - floor(raw_data)) * 60.0;
+
+  float decimaldata = raw_deg + ((float)raw_min / 60.0) + (raw_secs / 3600.0);
+  decimaldata = decimaldata * (float)coeff;
+
+  debug_printf("Decimal Degs: %f, Raw: %f, Degs: %d, Mins: %d, Secs: %f\r\n", decimaldata, raw_data, raw_deg, raw_min, raw_secs);
+  return decimaldata;
+}
+
+void compressX(char* x)
+{
+  float decLon = getDecimal(true);
+  int baseVal = 190463 * (180.0 + decLon);
+  int temp = 0;
+
+  char values[4];
+  
+  for(int i = 0; i<4; i++)
+  {
+    //Value divided by 91^(3-i)
+    float power = pow(91, 3-i);
+    temp = floor((float)baseVal / power);
+    baseVal -= temp * power;
+    values[i] = temp + 33;
+    debug_printf("[X] Compressed value %d (divided by %f) with remainder %d to %c\r\n", temp, power, baseVal, values[i]);
+  }
+
+  debug_printf("Raw Lon: %f, Compressed Data: %s\r\n", decLon, values);
+
+  strncpy(x, values, 4);
+}
+
+void compressY(char* y)
+{
+  float decLat = getDecimal(false);
+  int baseVal = 380926 * (90 - decLat);
+  int temp = 0;
+
+  char values[4];
+  
+  for(int i = 0; i<4; i++)
+  {
+    //Value divided by 91^(3-i)
+    float power = pow(91, 3-i);
+    temp = floor((float)baseVal / power);
+
+    //Set the base Val to remainder
+    baseVal -= temp * power;
+
+    //Add 33 so the resulting byte gets in the valid range
+    values[i] = temp + 33;
+    debug_printf("[Y] Compressed value %d (divided by %f) with remainder %d to %c\r\n", temp, power, baseVal, values[i]);
+  }
+
+  debug_printf("Raw Lat: %f, Compressed Data: %s\r\n", decLat, values);
+
+  strncpy(y, values, 4);
+}
+
+static void gps_compress()
+{
+  //Compresses GPS data as a whole payload
+  /*
+    Compressed data format (with bytelength):
+    TYYYYXXXXSIIC
+    Where
+    T -> Symbol Table ID (aka Overlay), 1 byte
+    Y -> Compressed lat, 4 bytes
+    X -> Compressed lon, 4 bytes
+    S -> Symbol Code (for example > with T='/' for car), 1 byte
+
+    These bytes are not used for now. So after your symbol code you have to insert a SPACE followed by two filler characters.
+    I -> Additional compressed info, like speed, course OR range OR alt. 2 bytes
+    C -> Compression type, 1 byte
+
+    Overall length: 13 bytes max
+  */
+  //Compression type byte
+  char origin = (char)0b00100110;
+  char y[5] = "0000";
+  char x[5] = "0000";
+  char cs[2] = "00";
+
+  //Add GPS Info to compression type
+  switch(param.gps)
+  {
+    case GPGGA:
+      origin += 0b10000;
+      break;
+
+    case GPRMC:
+      origin += 0b11000;
+      break;
+
+    case GPGLL:
+      origin += 0b01000;
+      break;
+  }
+
+  compressX(x);
+  compressY(y);
+
+  sprintf(compressedPos, "%s%s", y, x);
+  debug_printf("compressedPos should look like \"%s%s\"\r\n", y, x);
+  // strncpy(compressedPos, "/", 1);
+  // strncpy(compressedPos+1, y, 4);
+  // strncpy(compressedPos+5, x, 4);
+  // strncpy(compressedPos+9, ">", 1);
+  // strncpy(compressedPos+10, cs, 2);
+  // strncpy(compressedPos+12, origin, 1);
 }
 
 static void gps_send(uint8_t *buf, int len)
